@@ -1,0 +1,78 @@
+figure
+plot(0,0,'b--'); plot(0,0,'b-.');
+plot(0,0,'r--'); plot(0,0,'b-.');
+plot(0,0,'g--'); plot(0,0,'b-.');
+legend('V1,StimType1','V1,S
+
+
+for n = 1:3;
+
+    OptimizedSF_PSTH = load('OptimizedSF_PSTH.dat');
+    OptimizedSF_PSTH2 = load('OptimizedSF_PSTH2.dat');
+    OptimizedSF_PSTH_Norm = load('OptimizedSF_PSTH_Norm.dat');
+    OptimizedSF_PSTH_Norm2 = load('OptimizedSF_PSTH_Norm2.dat');
+
+    [rows, nbins] = size(OptimizedSF_PSTH);
+    bins = OptimizedSF_PSTH(1,:);
+    total_cells = rows-1;
+    hits = [];
+    for j = 2:nbins;
+        hits(j) = sum(OptimizedSF_PSTH(:,j));
+    end
+    hits = hits/total_cells;
+    figure
+    plot(bins,hits)
+    xlabel('Time (s)'), ylabel('Spikes')
+    title_str = ['PSTH at Optimized Spatial Freq; Stim Type 1; Total Cells = ' num2str(total_cells)]
+    title(title_str)
+
+    [rows, nbins] = size(OptimizedSF_PSTH2);
+    bins = OptimizedSF_PSTH2(1,:);
+    total_cells = rows-1;
+    hits = [];
+    for j = 2:nbins;
+        hits(j) = sum(OptimizedSF_PSTH2(:,j));
+    end
+    hits = hits/total_cells;
+    hold on
+    plot(bins,hits)
+    xlabel('Time (s)'), ylabel('Spikes')
+    title_str = ['PSTH at Optimized Spatial Freq; Stim Type 2; Total Cells = ' num2str(total_cells)]
+    title(title_str)
+
+end
+
+
+
+for j= 1:3;
+
+    [rows, nbins] = size(OptimizedSF_PSTH_Norm);
+    bins = OptimizedSF_PSTH_Norm(1,:);
+    total_cells = rows-1;
+    hits = [];
+    for j = 2:nbins;
+        hits(j) = sum(OptimizedSF_PSTH_Norm(:,j));
+    end
+    hits = hits/max(hits);
+    figure
+    plot(bins,hits)
+    xlabel('Time (s)'), ylabel('Spikes')
+    title_str = ['Normalized PSTH at Optimized Spatial Freq; Stim Type 1; Total Cells = ' num2str(total_cells)]
+    title(title_str)
+
+    [rows, nbins] = size(OptimizedSF_PSTH_Norm2);
+    bins = OptimizedSF_PSTH_Norm2(1,:);
+    total_cells = rows-1;
+    hits = [];
+    for j = 2:nbins;
+        hits(j) = sum(OptimizedSF_PSTH_Norm2(:,j));
+    end
+    hits = hits/max(hits);
+    figure
+    plot(bins,hits)
+    xlabel('Time (s)'), ylabel('Spikes')
+    title_str = ['Normalized PSTH at Optimized Spatial Freq; Stim Type 2; Total Cells = ' num2str(total_cells)]
+    title(title_str)
+end
+
+

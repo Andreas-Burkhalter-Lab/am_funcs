@@ -1,0 +1,172 @@
+function GratingRFProfile(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE);
+
+    ProtocolDefs;
+    symbols = {'ko' 'k*' 'go' 'mo' 'b*' 'r*' 'g*' 'c*'};
+    lines = {'k-' 'k--' 'g-' 'm-' 'b--' 'r--' 'g--' 'c--'};
+    
+    % get the position values for each condition in the condition_list[]
+    x_pos = data.gratings_params(GRAT_XCTR,:,PATCH1);
+    
+    % get the position values for each condition in the condition_list[]
+    y_pos = data.gratings_params(GRAT_YCTR,:,PATCH1);
+    
+    rf_xctr = data.one_time_params(RF_XCTR);
+    rf_yctr = data.one_time_params(RF_YCTR);
+    
+    %get null trials for spontaneous activity
+    null_trials = logical(y_pos == data.one_time_params(NULL_VALUE));
+    control_trials = logical(y_pos == data.one_time_params(PATCH_OFF));
+    
+    %now get unique values for both x and y position
+    unique_x_pos = munique(x_pos(~null_trials)');
+    unique_y_pos = munique(y_pos(~null_trials)');
+    
+    %now, get the firing rates for all the trials 
+    spike_rates = data.spike_rates(SpikeChan, :);
+ 
+    %now, remove trials that do not fall between BegTrial and EndTrial
+    trials = 1:length(x_pos);		% a vector of trial indices
+    select_trials = ( (trials >= BegTrial) & (trials <= EndTrial) );
+
+    % Calculate spontaneous rates before looping through so can calculate DTI
+    null_rate = mean(data.spike_rates(SpikeChan, null_trials & select_trials));
+    
+    Z = zeros(length(unique_x_pos)* length(unique_y_pos), 3);
+    display_contours = zeros(length(unique_x_pos), length(unique_y_pos));
+           
+    for i = 1:length(unique_x_pos)
+        for j = 1:length(unique_y_pos)
+            indices = logical((x_pos == unique_x_pos(i)) & (y_pos == unique_y_pos(j))& (y_pos ~= NULL_VALUE) & (y_pos ~= PATCH_OFF) );            
+            Z((i-1)*(length(unique_y_pos)) + j, 1) = unique_x_pos(i);
+            Z((i-1)*(length(unique_y_pos)) + j, 2) = unique_y_pos(j);
+            Z((i-1)*(length(unique_y_pos)) + j, 3) = mean(spike_rates(indices));
+        end
+    end
+    
+    for i=1:length(unique_x_pos)
+        display_contours(:, i) = Z((i-1)*(length(unique_y_pos))+1:(i-1)*(length(unique_y_pos))+(length(unique_y_pos)), 3)
+    end
+    
+    %display_contours = flipud(display_contours);
+    
+    %determine rotation of the contour (RLS 12-18-07)
+    x_max_index = 0;
+    for i=1:length(x_pos)
+        if y_pos(i) == -9999
+            i = i+1;
+        elseif x_pos(i) == max(x_pos)
+            x_max_index = i;
+            i = i +1;
+        else
+            i = i +1;
+        end
+    end
+    
+    %make sure we don't use any of the -9999 values
+    new_x_min = unique_x_pos(1);
+    
+    x_min_index = 0;
+    for i=1:length(x_pos) 
+        if x_pos(i) == new_x_min
+            x_min_index = i;
+            i = i +1;
+        else
+            i = i +1;
+        end
+    end
+    
+    rotation_angle = tand((y_pos(x_max_index)-y_pos(x_min_index))/(max(x_pos)-min(x_pos)));
+    
+    figure
+    contourf(unique_x_pos, unique_y_pos, display_contours)
+    title(FILE);  % Add in a title JWN 072405
+    ax1 = axis;
+    colorbar
+    axis image
+    
+    raw = [x_pos' y_pos' spike_rates'];
+    means = Z;
+      
+    %fit data here
+    pars = gauss2Dfit(means,raw)
+    
+    %create interpolated arrays for data display
+    x_interp = unique_x_pos(1): 1 : unique_x_pos(length(unique_x_pos));
+    y_interp = unique_y_pos(1): 1 : unique_y_pos(length(unique_y_pos));
+    z_gauss = zeros(length(x_interp), length(y_interp));
+      
+    %obtain fitted data for interpolated arrays
+    for i=1:length(x_interp)
+        for j = 1:length(y_interp)
+            z_gauss(i,j) =  gauss2Dfunc(x_interp(i),y_interp(j), pars);
+        end
+    end
+    
+    z_gauss = rot90(z_gauss);
+    z_gauss = rot90(z_gauss);
+    z_gauss = rot90(z_gauss);
+    z_gauss = fliplr(z_gauss);
+    figure
+    contourf(x_interp, y_interp, z_gauss)
+    colorbar
+    axis image
+    
+    
+    %print out the parameters of the fit
+    legend_figure = figure;
+    set(legend_figure, 'Position', [1000 773 180 100], 'Name', 'Fit Parameters', 'MenuBar', 'none');
+    axis([0 1 0 7]);
+    axis('off')
+    hold on
+
+    string = sprintf('Base Rate = %1.3f', pars(1));
+    text(0, 6+.25, string, 'FontSize', 8);
+    string = sprintf('Amplitude = %1.3f', pars(2));
+    text(0, 5+.25, string, 'FontSize', 8);
+    string = sprintf('X Width = %1.3f', pars(4));
+    text(0, 4+.25, string, 'FontSize', 8);
+    string = sprintf('Y Width = %1.3f', pars(6));
+    text(0, 3+.25, string, 'FontSize', 8);
+    string = sprintf('Fitted CTR = (%1.3f, %1.3f)', pars(3), pars(5));
+    text(0, 2+.25, string, 'FontSize', 8);
+    string = sprintf('RFPLOT CTR = (%1.3f, %1.3f)', rf_xctr, rf_yctr);
+    text(0, 1+.25, string, 'FontSize', 8); 
+    hold off
+
+% print(2); % Uncomment for autoprinting.  JWN 081605
+% close(2); % Uncomment for autoprinting.
+% close(3);
+% close(4);
+
+aspect_ratio = pars(4)/pars(6);
+
+output = 1;
+if (output == 1)
+
+    %------------------------------------------------------------------------
+    %write out all relevant parameters to a cumulative text file, GCD 8/08/01
+    %write out one line for each stimu_type for each neuron.
+    outfile = ['C:\LabTools\Matlab\TEMPO_Analysis\ProtocolSpecific\RFMapping\RF_Summary.dat'];
+    printflag = 0;
+    if (exist(outfile, 'file') == 0)    %file does not yet exist
+        printflag = 1;
+    end
+    fid = fopen(outfile, 'a');
+    if (printflag)
+        fprintf(fid, 'FILE\t\t\t PrfOR\t PrfSF\t PrfTF\t RFXctr\t RFYctr\t RFDiam\t BaseRate\t Amp\t\t x_width\t y_width\t x_ctr\t y_ctr\t rfplot_x_ctr\t rfplot_y_ctr\t axpect_ratio\t rotation_from_horizontal\t');
+        fprintf(fid, '\r\n');
+        printflag = 0;
+    end
+    for j = 1:1
+        buff = sprintf('%s\t %5.1f\t %5.2f\t %5.3f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t %5.2f\t\t %5.2f\t\t %5.2f\t\t %5.2f\t\t', ...
+            FILE, data.neuron_params(PREFERRED_ORIENTATION, 1), data.neuron_params(PREFERRED_SPATIAL_FREQ, 1), data.neuron_params(PREFERRED_TEMPORAL_FREQ, 1), data.neuron_params(RF_XCTR, 1), data.neuron_params(RF_YCTR, 1), data.neuron_params(RF_DIAMETER, 1),...
+            pars(1), pars(2), pars(4), pars(6), pars(3), pars(5), rf_xctr, rf_yctr, aspect_ratio, rotation_angle);
+        fprintf(fid, '%s', buff);
+        fprintf(fid, '\r\n');
+    end
+    fclose(fid);
+    %------------------------------------------------------------------------
+
+end
+
+

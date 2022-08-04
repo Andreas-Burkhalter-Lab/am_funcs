@@ -1,0 +1,11 @@
+function combinedAvgMapsAnalysismhnew20100421
+% last edited 8/4/2015
+global trace_line_width traces_colored
+
+%% Parameters
+trace_line_width = 0.1;
+
+
+
+map=mhaveragedMapsAnalysisNewEphys_AM;
+analyzeAveragedMapMHnew20100421(map);

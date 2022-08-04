@@ -1,0 +1,42 @@
+%---------------------------------------------------------------------------------------------------------------------
+%-- PrintGratingData.m : THis function prints out Grating Temporal Frequency tuning curve specific data on the igure plot.
+%--	CMA 04/10/06
+%---------------------------------------------------------------------------------------------------------------------
+
+function   PrintGratingData(p_value, base_rate, amplitude, pref_tempfreq, max_rate, width, stats1, stats2, DSI, chi2, chiP)
+axis([0 100 0 100]);
+axis('off');
+font_size = 9;
+bump_size = 7;
+
+xpos = -10;   
+ypos = 20;
+
+line = sprintf('Fitted Tuning Curve:');
+text(xpos,ypos,line,'FontSize',font_size+2);		ypos = ypos - bump_size;      
+line = sprintf('Preferred Temp Freq = %1.5g   Resp = %0.5g', pref_tempfreq, max_rate);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;    
+line = sprintf('Base Rate = %0.5g', base_rate);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;
+line = sprintf('Amplitude = %0.3g', amplitude);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;       
+line = sprintf('Width (FWHM) = %0.3g', width);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;         
+line = sprintf('DSI = %0.3g', DSI);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;       
+
+xpos = 60;   
+ypos = 10;
+font_size = 8;
+line = sprintf('ANOVA: P = %0.3g', p_value);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;       
+% line = sprintf('Dir Discrim Ind = %0.5g', DirDI);
+% text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;  
+line = sprintf('chi2 = %0.5g   chiP = %0.8g', chi2, chiP);
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;  
+line = sprintf('Means: Rsq=%6.3f, P=%8.6f', stats1(1), stats1(3));
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;
+line = sprintf('Raw:   Rsq=%6.3f, P=%8.6f', stats2(1), stats2(3));
+text(xpos,ypos,line,'FontSize',font_size);		ypos = ypos - bump_size;
+
+return;

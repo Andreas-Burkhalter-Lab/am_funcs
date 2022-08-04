@@ -1,0 +1,262 @@
+%This function attempts to pool all five useful gratings analyses' data
+%together for use in calculating latency RLS 1-20-08
+function Pool_Data_Test(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol);   
+
+global pooling pool_file pool_data1 pool_data2 pool_size pool_data pool_trials bin_size window_size, 
+% [directory] = dir('C:\Data\Tempo\Raw');
+% names = char(directory.name);
+% sp_files = [];
+% for q = 1: length(names)
+%     if names(q, 10:14) == '2.htb';
+%         sp_files = cat(1, sp_files, names(q, :));
+%     end
+% end
+% files = deblank(sp_files);
+% for p = 1:length(files)
+%     FILE = files(p, :);
+%     pooling = 1;
+%     pool_file = FILE;
+%     TEMPO_GUI_Switchyard('file open');
+%     TEMPO_GUI_Switchyard('load data');
+    for j = .001:.001:.005
+        bin_size = j;
+%        if j == .001;
+%            for k = 1:50
+                window_size = .060;
+                pool_data1 = [];
+                pool_data2 = [];
+                pool_size = 0;
+                pool_trials = 0;
+                pooling = 1;
+                first_analysis = FILE(10);
+                if first_analysis == '2';
+                    SF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+                elseif first_analysis == '3';
+                    TF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+                elseif first_analysis == '4';
+                    Orientation_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+                elseif first_analysis == '5';
+                    Contrast_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+                elseif first_analysis == '6';
+                    Size_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+                end
+
+                for i = 2:6
+                    if int2str(i) ~= first_analysis;
+                        FILE(10) = int2str(i);
+                        pool_file = FILE;
+                        TEMPO_GUI_Switchyard('file open');
+                        TEMPO_GUI_Switchyard('load data');
+                        TEMPO_GUI_Switchyard('analyze');
+                        %if i == 2;
+                        %    SF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+                        %elseif i == 3;
+                        %    TF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+                        %elseif i == 5;
+                        %    Contrast_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+                        %elseif i == 6;
+                        %    Size_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+                        %end
+                    end
+                end
+
+                pooling = 0;
+                pool_data1 = [];
+                pool_data2 = [];
+                pool_size = 0;
+                pool_trials = 0;
+
+%            end
+%         elseif j == .002;
+%             for k = 1:25
+%                 window_size = j*k;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+%                 pooling = 1;
+%                 first_analysis = FILE(10);
+%                 if first_analysis == '2';
+%                     SF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '3';
+%                     TF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                 elseif first_analysis == '4';
+%                     Orientation_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '5';
+%                     Contrast_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 elseif first_analysis == '6';
+%                     Size_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 end
+% 
+%                 for i = 2:6
+%                     if int2str(i) ~= first_analysis;
+%                         FILE(10) = int2str(i);
+%                         pool_file = FILE;
+%                         TEMPO_GUI_Switchyard('file open');
+%                         TEMPO_GUI_Switchyard('load data');
+%                         TEMPO_GUI_Switchyard('analyze');
+%                         %if i == 2;
+%                         %    SF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                         %elseif i == 3;
+%                         %    TF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                         %elseif i == 5;
+%                         %    Contrast_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %elseif i == 6;
+%                         %    Size_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %end
+%                     end
+%                 end
+% 
+%                 pooling = 0;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+% 
+%             end
+%         elseif j == .003;
+%             for k = 1:16
+%                 window_size = j*k;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+%                 pooling = 1;
+%                 first_analysis = FILE(10);
+%                 if first_analysis == '2';
+%                     SF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '3';
+%                     TF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                 elseif first_analysis == '4';
+%                     Orientation_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '5';
+%                     Contrast_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 elseif first_analysis == '6';
+%                     Size_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 end
+% 
+%                 for i = 2:6
+%                     if int2str(i) ~= first_analysis;
+%                         FILE(10) = int2str(i);
+%                         pool_file = FILE;
+%                         TEMPO_GUI_Switchyard('file open');
+%                         TEMPO_GUI_Switchyard('load data');
+%                         TEMPO_GUI_Switchyard('analyze');
+%                         %if i == 2;
+%                         %    SF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                         %elseif i == 3;
+%                         %    TF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                         %elseif i == 5;
+%                         %    Contrast_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %elseif i == 6;
+%                         %    Size_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %end
+%                     end
+%                 end
+% 
+%                 pooling = 0;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+% 
+%             end
+%         elseif j == .004;
+%             for k = 1:12
+%                 window_size = j*k;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+%                 pooling = 1;
+%                 first_analysis = FILE(10);
+%                 if first_analysis == '2';
+%                     SF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '3';
+%                     TF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                 elseif first_analysis == '4';
+%                     Orientation_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '5';
+%                     Contrast_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 elseif first_analysis == '6';
+%                     Size_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 end
+% 
+%                 for i = 2:6
+%                     if int2str(i) ~= first_analysis;
+%                         FILE(10) = int2str(i);
+%                         pool_file = FILE;
+%                         TEMPO_GUI_Switchyard('file open');
+%                         TEMPO_GUI_Switchyard('load data');
+%                         TEMPO_GUI_Switchyard('analyze');
+%                         %if i == 2;
+%                         %    SF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                         %elseif i == 3;
+%                         %    TF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                         %elseif i == 5;
+%                         %    Contrast_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %elseif i == 6;
+%                         %    Size_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %end
+%                     end
+%                 end
+% 
+%                 pooling = 0;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+% 
+%             end
+%         else
+%             for k = 1:10
+%                 window_size = j*k;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+%                 pooling = 1;
+%                 first_analysis = FILE(10);
+%                 if first_analysis == '2';
+%                     SF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '3';
+%                     TF_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                 elseif first_analysis == '4';
+%                     Orientation_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                 elseif first_analysis == '5';
+%                     Contrast_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 elseif first_analysis == '6';
+%                     Size_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                 end
+% 
+%                 for i = 2:6
+%                     if int2str(i) ~= first_analysis;
+%                         FILE(10) = int2str(i);
+%                         pool_file = FILE;
+%                         TEMPO_GUI_Switchyard('file open');
+%                         TEMPO_GUI_Switchyard('load data');
+%                         TEMPO_GUI_Switchyard('analyze');
+%                         %if i == 2;
+%                         %    SF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);
+%                         %elseif i == 3;
+%                         %    TF_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1);   
+%                         %elseif i == 5;
+%                         %    Contrast_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %elseif i == 6;
+%                         %    Size_PSTH(pool_data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol, 1); 
+%                         %end
+%                     end
+%                 end
+% 
+%                 pooling = 0;
+%                 pool_data1 = [];
+%                 pool_data2 = [];
+%                 pool_size = 0;
+%                 pool_trials = 0;
+% 
+%             end
+%        end
+    end
+%end
+return
+           

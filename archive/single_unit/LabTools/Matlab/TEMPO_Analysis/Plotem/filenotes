@@ -1,0 +1,386 @@
+rdfiles:
+
+		regflg=2	algparams3	things that affect msac:
+
+1   rd001a	fine		fine
+2   rd001b	fine		fine
+3   rd001c	fine		fine
+4   rd001e	fine		fine
+5   rd001f	fine		fine
+6   rd002b	fine		fine	occasional blinks are showing up
+7   rd002c	fine		fine
+8   rd002d	fine		fine
+9   rd002e	fine		fine
+10   rd002f	fine		fine
+11   rd003a	fine		fine
+12   rd003b	fine		fine	sleepy sometimes		
+13   rd003c	fine		fine
+14   rd003d	fine		fine
+15   rd004a	fine		fine
+16   rd004b	fine		fine
+17   rd005a	fine		fine
+18   rd005b	fine		fine
+19   rd005c	fine		fine
+20   rd006a	fine		fine
+21   rd006b	fine		fine	trl 114 has knarly noise
+22   rd006c	fine		fine	trl 123 has some funky noise
+23   rd006d	fine		fine
+24   rd006e	fine		fine	trl 1 has knarly noise
+25   rd006f	fine		fine
+26   rd006g	fine		fine
+27   rd006h	fine		fine
+28   rd007a	fine		fine
+29   rd007b	fine		fine
+30   rd007c	fine		fine
+31   rd007d	fine		fine
+32   rd007e	fine		fine
+33   rd007f	fine		fine
+34   rd007g	fine		fine
+35   rd007h	fine		fine
+36   rd007i	fine		fine
+37   rd007j	fine		fine
+38   rd009a	fine		fine
+39   rd009b	fine		fine
+40   rd009d	fine		fine	trl 1 has knarly noise
+41   rd010a	fine		fine
+42   rd010b	fine		fine	trl 2 doesn't look quite real
+43   rd010c	fine		fine	trl 1/2 -- not sure if there's bad noise
+44   rd010d	fine		fine	trls 1-4 have knarly noise
+					trls 18/20, 65/67 some kind of noise?
+45   rd010e	fine		fine	trl 112, 140-141, 155? have knarly noise
+46   rd010f	fine		fine	trls 79, 84, 94, 98-99, 101-104 knarly noise
+47   rd010g	fine		fine
+48   rd010i	fine		fine
+49   rd010j	fine		fine
+50   rd010k	fine		fine
+51   rd010l	fine		fine
+52   rd011a	fine		fine
+53   rd011b	fine		fine	sleepy trls 71-77, 158; noise trl 84?
+54   rd011c	fine		fine
+55   rd011d	fine		fine	sleepy trl 30, 37; noise trl 38, 138
+56   rd012a	fine		fine
+57   rd012b	fine		fine
+58   rd012c	fine		fine	sleepy ~trl 102
+59   rd012d	fine		fine	sleepy trls 11-12
+60   rd012e	fine		fine	sleepy trls 18-19
+61   rd012g	fine		fine
+62   rd012h	fine		fine
+63   rd012i	fine		fine
+64   rd013a	fine		fine	sleepy for many trials
+65   rd013b	fine		fine
+66   rd014a	fine		fine
+67   rd014c	fine		fine
+68   rd014d	fine		fine
+69   rd014e	fine		fine
+70   rd014f	fine		fine
+71   rd014g	fine		fine
+72   rd015a	fine		fine	sleepy trls 32-33
+73   rd015b	fine		fine	sleepy at end
+74   rd015c	fine		fine	sleepy trl 3
+75   rd016a	fine		fine
+76   rd016b	fine		fine
+77   rd017a	fine		fine
+78   rd017b	fine		fine
+79   rd018a	fine		fine
+80   rd018b	fine		fine	sleepy trl 1
+81   rd018c	fine		fine
+82   rd018d	fine		fine
+83   rd019a	fine		fine
+84   rd019b	fine		fine
+85   rd019c	fine		fine
+86   rd019d	fine		fine
+87   rd019e	fine		fine
+88   rd019f	fine		fine
+89   rd019g	fine		fine
+90   rd019h	fine		fine
+91   rd020a	fine		fine
+92   rd020b	fine		fine	sleepy trl 1
+93   rd020c	fine		fine
+94   rd020d	fine		fine	sleepy trl 119
+95   rd020e	fine		fine
+96   rd020f	fine		fine
+97   rd020g	fine		fine
+98   rd021a	fine		fine
+99   rd021b	fine		fine
+100   rd021c	fine		fine
+101   rd021d	fine		fine	sleepy trls 51, 55-56, 134-135
+102   rd021e	fine		fine
+103   rd022a	fine		fine
+104   rd022b	fine		fine	sleepy trl 26
+105   rd022c	fine		fine
+106   rd022d	fine		fine	sleepy trl 94, 115-118, 160
+107   rd022e	fine		fine
+108   rd022f	fine		fine
+109   rd022g	fine		fine
+110   rd022h	fine		fine
+111   rd022i	fine		fine	sleepy trls 35-36
+112   rd022j	fine		fine
+113   rd022k	fine		fine	sleepy trls 10-11, 17-18, 22, 33, 38
+114   rd023a	fine		fine
+115   rd023b	fine		fine
+116   rd023c	fine		fine
+117   rd023d	fine		fine
+118   rd023e	fine		fine	noise problem trl 18, 43-45
+119   rd023f	fine		fine
+120   rd024a	fine		fine
+121   rd024b	fine		fine
+122   rd024c	fine		fine	noise problem trl 2
+123   rd024d	fine		fine
+124   rd025a	fine		fine
+125   rd025b	fine		fine
+126   rd025c	fine		fine
+127   rd025d	fine		fine
+128   rd025e	fine		fine	noise problem trl 44
+129   rd025f	fine		fine
+130   rd026a	fine		fine	sleepy trl 65, 71, 75, 81, 109
+131   rd026b	fine		fine	slow ems trls 5-8, 18-20, 30
+					sleepy trls 37-40, 64-69, 87, 99, 102-112
+132   rd027a	fine		fine	blinky
+133   rd027b	fine		fine
+134   rd027c	fine		fine	sleepy trl 24, 42, 48-49, 54, 60, 67-76, 114-116, 127-128, 141-145
+135   rd028a	fine		fine	huge blinks trls 35-38, 49, 54-57, 61-64, 77-80, 82, 95
+136   rd028b	fine		fine	sleepy trls 63-64, 75-79; some big blinks
+137   rd028c	fine		fine	sleepy trl 61
+138   rd029a	fine		fine	some huge blinks
+139   rd029b	fine		fine
+140   rd029c	fine		fine	a couple huge blinks
+141   rd029d	fine		fine	a couple huge blinks
+142   rd030a	fine		fine	blinky or really sleepy much of the time
+143   rd030b	fine		fine	sleepy trls 55-80, 93-97
+144   rd031a	fine		fine
+145   rd031b	fine		fine
+146   rd031c	fine		fine	a few large blinks
+147   rd032a	fine		fine
+148   rd032c	fine		fine
+149   rd032e	fine		fine	a couple large blinks
+150   rd034a	fine		fine
+151   rd034b	fine		fine
+152   rd034c	fine		fine
+153   rd034d	fine		fine
+154   rd035b	fine		fine
+155   rd036a	fine		fine
+156   rd036b	fine		fine
+157   rd036c	fine		fine	huge blinks trl 16, 110; sleepy trls 82, 94, 103-107
+158   rd037a	fine		fine	a couple huge blinks
+159   rd037c	fine		fine	a couple huge blinks
+160   rd037d	fine		fine	a couple huge blinks
+161   rd038a	fine		fine
+162   rd038b	fine		fine
+163   rd039a	fine		fine
+164   rd039b	fine		fine	a couple large blinks
+165   rd040a	fine		fine
+166   rd040b	fine		fine	sleepy trls 85-95, 101-108, 139
+167   rd040c	fine		fine
+168   rd040d	fine		fine	sleepy trls 37, 40
+169   rd041a	fine		fine
+170   rd041b	fine		fine	sleepy trls 109, 111
+171   rd041c	fine		fine
+172   rd042a	fine		fine
+173   rd042b	fine		fine	a couple large blinks
+174   rd042c	fine		fine	a couple large blinks
+175   rd042d	fine		fine	sleepy trl 165
+176   rd043a	fine		fine	a few large blinks
+177   rd043b	fine		fine	a few large blinks
+178   rd043c	fine		fine
+
+
+
+dsfiles:
+
+
+		regflg=1	algparams1	things that affect msac:
+
+1   ds011a	fine		fine
+2   ds014a	fine		fine
+3   ds014b	fine		fine
+4   ds017a	fine		fine
+5   ds017b	fine		fine
+6   ds017c	fine		fine
+7   ds018a	fine		fine
+8   ds018b	fine		fine
+9   ds020a	fine		fine
+10   ds020b	fine		not so good -- noisy, a few non-saccades
+11   ds023a	
+12   ds026a
+13   ds026b
+14   ds028a
+15   ds028b
+16   ds031a
+17   ds031b
+18   ds034a
+19   ds034b
+20   ds039a
+21   ds039b
+22   ds041a
+23   ds041b
+24   ds041c
+25   ds041d
+26   ds042a
+27   ds042b
+28   ds043a
+29   ds043b
+30   ds043f
+31   ds043i
+32   ds044a
+33   ds044b
+34   ds045a
+35   ds045b
+36   ds045c
+37   ds045d
+38   ds046a
+39   ds047a
+40   ds047b
+41   ds047c
+42   ds047d
+43   ds049a
+44   ds049b
+45   ds050a
+46   ds050b
+47   ds050c
+48   ds050d
+49   ds053a
+50   ds053b
+51   ds053d
+52   ds055a
+53   ds055e
+54   ds055f
+55   ds055h
+56   ds055k
+57   ds057a
+58   ds057b
+59   ds057c
+60   ds059d
+61   ds059f
+62   ds061a
+63   ds061b
+64   ds067a
+65   ds067b
+66   ds068a
+67   ds068b
+68   ds070a
+69   ds070b
+70   ds070c
+71   ds072a
+72   ds072b
+73   ds072c
+74   ds072d
+75   ds073a
+76   ds073b
+77   ds073c
+78   ds073e
+79   ds077a
+80   ds077b
+81   ds081a
+82   ds081d
+83   ds082a
+84   ds086a
+85   ds086f
+86   ds086g
+87   ds086j
+88   ds086k
+89   ds090a
+90   ds090b
+91   ds090c
+92   ds091a
+93   ds091b
+94   ds092a
+95   ds107a
+96   ds107b
+97   ds107c
+98   ds117a
+99   ds117b
+100   ds118a
+101   ds122a
+102   ds122b
+103   ds123a
+104   ds123b
+105   ds130a
+106   ds130b
+107   ds134b
+108   ds135a
+109   ds135b
+110   ds135c
+111   ds139a
+112   ds139b
+113   ds139c
+114   ds144a
+115   ds144b
+116   ds144c
+117   ds144d
+118   ds145a
+119   ds145d
+120   ds145e
+121   ds145f
+122   ds149a
+123   ds149d
+124   ds149f
+125   ds150a
+126   ds150b
+127   ds155a
+128   ds155b
+129   ds156a
+130   ds156b
+131   ds156c
+132   ds157a
+133   ds157b
+134   ds157c
+135   ds158a
+136   ds158b
+137   ds158c
+138   ds158d
+139   ds158e
+140   ds158j
+141   ds158k
+142   ds159a
+143   ds159b
+144   ds159c
+145   ds168a
+146   ds168b
+147   ds169a
+148   ds169b
+149   ds171a
+150   ds171c
+151   ds171d
+152   ds171e
+153   ds171g
+154   ds171l
+155   ds171m
+156   ds175a
+157   ds175b
+158   ds175c
+159   ds184a
+160   ds184b
+161   ds184c
+162   ds185a
+163   ds185b
+164   ds191a
+165   ds191b
+166   ds191c
+167   ds193a
+168   ds193b
+169   ds196a
+170   ds196b
+171   ds197a
+172   ds197b
+173   ds205b
+174   ds205c
+175   ds206a
+176   ds206b
+177   ds206c
+178   ds210a
+179   ds210b
+180   ds210c
+181   ds213a
+182   ds213b
+183   ds219b
+184   ds219c
+185   ds222a
+186   ds222b
+187   ds222c
+188   ds223a
+189   ds223d
+190   ds223e
+191   ds223f
+192   ds223g
+
+

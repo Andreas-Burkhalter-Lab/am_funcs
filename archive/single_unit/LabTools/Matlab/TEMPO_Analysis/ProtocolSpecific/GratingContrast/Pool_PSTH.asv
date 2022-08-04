@@ -1,0 +1,60 @@
+%Edited on 1/20/08 by RLS to incorporate a seperate 'Pooling' function for use
+%with calculating latency
+%Edited on 06/19/06 by CMA to remove all references to SpikeChan2 or
+%spikes2, which produce the error "??? Undefined function or variable
+%'SpikeChan2'." when run with our data.  The original file is backed up in
+%the folder Chris's Lab Tools Backup located on the desktop of this
+%machine.
+
+function Pool_PSTH(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol);
+line_types = ['b-'; 'r-'; 'g-'; 'k-'; 'g-'; 'g-'; 'g-'; 'g-'];
+Tempo_Defs;
+ProtocolDefs;
+
+TEMPO_Defs;		%needed for defines like IN_T1_WIN_CD
+ProtocolDefs;	%needed for all protocol specific functions - contains keywords - BJP 1/4/01
+Path_Defs;
+
+symbols = {'ko' 'k*' 'go' 'mo' 'b*' 'r*' 'g*' 'c*'};
+lines = {'k-' 'm-' 'g-' 'b-' 'b--' 'r--' 'g--' 'c--'};
+colors = {'k.' 'b.'};
+global pool_page pool_data1 pool_data2
+
+
+bin_matrix = [0:0.001:3]; %50 msec bins
+bin_centers = [0.0005:0.001:2.9995];
+bin_centers = [bin_centers, 3];
+
+
+figure;
+set(gcf,'PaperPosition', [.51 .51 20 27.5], 'Position', [450 50 500 573], 'Name', 'Graph');
+hold on
+pool_data_plot1 = pool_data1(:,:,1) + pool_data1(:,:,2) + pool_data1(:,:,3) +pool_data1(:,:,4) +pool_data1(:,:,5);
+[hits1] = histc(pool_data_plot1/1000, bin_matrix);
+plot(bin_centers,hits1,lines{1})
+if ~isempty(pool_data2)
+    pool_data_plot2 = pool_data2(:,:,1) + pool_data2(:,:,2) + pool_data2(:,:,3) +pool_data2(:,:,4) +pool_data2(:,:,5);
+    [hits2] = histc(total_spikes2/1000, bin_matrix);
+    plot(bin_centers,pool_data_plot2,lines{2})
+end
+title('Title')
+        
+%Normalize the responses to a peak of 1 so that a few very active cells do
+%not bias the results
+normalized_pool_data_plot1 = pool_data_plot1/max(pool_data_plot1);
+if ~isempty(pool_data2)
+    normalized_pool_data_plot2 = pool_data_plot2/max(pool_data_plot2);
+end
+
+figure;
+set(gcf,'PaperPosition', [.51 .51 20 27.5], 'Position', [450 50 500 573], 'Name', 'Graph (Normalized)');
+hold on
+plot(bin_centers,normalized_pool_data_plot1,lines{1})
+if ~isempty(pool_data2)
+    plot(bin_centers,normalized_pool_data_plot2,lines{2})
+end
+title('Title - Normalized')
+pool_data1 = [];
+pool_data2 = [];
+pool_page = 0;
+return

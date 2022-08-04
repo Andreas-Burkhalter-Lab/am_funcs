@@ -1,0 +1,25 @@
+% DirectionTuningPlot_3D.m -- Plots response as a function of azimuth and elevation for MOOG 3D tuning expt
+%--	YONG, 6/27/03
+%-----------------------------------------------------------------------------------------------------------------------
+function DirectionTuningPlot_3D(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE);
+
+Path_Defs;
+ProtocolDefs; %contains protocol specific keywords - 1/4/01 BJP
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Plot SU activity
+FigureIndex=2;
+TuningPlotNew(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE,FigureIndex);
+
+FigureIndex=3;
+SpikeChan=4;
+TuningPlotNew(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE,FigureIndex);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%---------------------------------------------------------------------------------------
+%save the figures
+%Directory='C:\Documents and Settings\Aihua\Desktop\Data analysis\Yong_MUSU';
+Directory='C:\Documents and Settings\Aihua\Desktop\Data analysis\Yong_MUSU\figures';
+FileName1=[Directory,'\',FILE(1:end-4),'_SU.fig'];figure(2); saveas(gcf,FileName1,'fig');
+FileName2=[Directory,'\',FILE(1:end-4),'_MU.fig'];figure(3); saveas(gcf,FileName2,'fig');
+return;

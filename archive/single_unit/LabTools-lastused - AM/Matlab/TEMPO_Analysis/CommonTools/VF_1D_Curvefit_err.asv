@@ -1,0 +1,15 @@
+% VF_1D_Curvefit_err.m -- computes the error between the square root of the
+% data and the square root of the values from VF_1D_Curvefit
+
+function err = VF_1D_Curvefit_err(x)
+
+global xdata ydata_current
+
+yfit = VF_1D_Curvefit(x,xdata);
+
+% %threshold the fitted values (don't allow less than zero)
+% yfit(yfit < 0) = 0;
+
+err = norm(sqrt(yfit)-sqrt(ydata_current))^2;
+
+return;

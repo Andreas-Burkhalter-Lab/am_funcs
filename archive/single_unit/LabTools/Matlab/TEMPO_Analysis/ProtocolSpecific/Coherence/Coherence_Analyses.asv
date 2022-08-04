@@ -1,0 +1,9 @@
+function Coherence_Analyses(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE);
+
+	switch(Analysis{1})
+	   case 'Plot Tuning Curve'
+         CoherenceCurves(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE);
+      case 'Plot Rasters/Histograms'
+   		disp('plot rasters here');   
+   end
+return;

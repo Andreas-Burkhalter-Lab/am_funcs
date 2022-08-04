@@ -1,0 +1,122 @@
+%Edited on 06/19/06 by CMA to remove all references to SpikeChan2 or
+%spikes2, which produce the error "??? Undefined function or variable
+%'SpikeChan2'." when run with our data.  The original file is backed up in
+%the folder Chris's Lab Tools Backup located on the desktop of this
+%machine.
+
+function PlotRasters(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol);
+
+line_types = ['b-'; 'r-'; 'g-'; 'k-'; 'g-'; 'g-'; 'g-'; 'g-'];
+Tempo_Defs;
+ProtocolDefs;
+
+pref_sf = data.neuron_params(PREFERRED_SPATIAL_FREQ, 1);
+sf = data.gratings_params(GRAT_SPATIAL_FREQ,:,PATCH1);
+diff_sf = pref_sf-sf;
+diff_sf = abs(diff_sf);
+diff_sf(diff_sf==min(diff_sf))=1;
+diff_sf(diff_sf~=min(diff_sf))=0;
+diff_sf(diff_sf~=0)=1;
+
+count=1;
+x_axis = [-0.4995:0.0005:2.5];
+stim_bar = x_axis;
+stim_bar(stim_bar>=0 & stim_bar<=2)=1;
+stim_bar(stim_bar~=1)=0;
+
+
+figure
+%plot(stim_bar.*x_axis,count*ones(1,length(x_axis)),'k-')
+hold on
+for trial=1:length(diff_sf);
+    %if diff_sf(trial)==1;
+        count = count+1;
+     %   StartEventBin(trial)
+     %   StopEventBin(trial)
+        spikes =  find(data.spike_data(SpikeChan,(StartEventBin(trial) + StartOffset - 500):(StopEventBin(trial) + StopOffset + 500),trial) == 1);
+        plot (spikes/1000,count*ones(1,length(spikes)),'k.');
+        hold on;
+    %end
+end
+
+figure
+%plot(stim_bar.*x_axis,count*ones(1,length(x_axis)),'k-')
+hold on
+for trial=1:length(diff_sf);
+    %if diff_sf(trial)==1;
+        count = count+1;
+     %   StartEventBin(trial)
+     %   StopEventBin(trial)
+        spikes =  find(data.spike_data(SpikeChan,:,trial) == 1);
+        plot (spikes,count*ones(1,length(spikes)),'k.');
+        hold on;
+    %end
+end
+
+% StartEventBin(trial)
+% StopEventBin(trial)
+% stimbar=(1:2000);
+% stimbar=stimbar(stimbar>=StartEventBin(trial));
+% hold on
+% plot(stimbar,1*ones(1,length(stimbar)),'b')
+% title('Optimized Trial Rasters');
+% xlabel('Data Point');
+% ylabel('Trial Number');
+%axis([-0.5 2.5 0 (count+1)])
+
+%sf_select = logical( (sf == optimized_sf) )
+%trials = 1:length(sf);
+%select_trials = ( (trials >= BegTrial) & (trials <= EndTrial) );
+%spikes = data.spike_data(SpikeChan, :, :);
+%[a, b, c] = size(spikes)
+
+
+
+
+% figure
+% for trial = BegTrial:EndTrial
+%     spikes = [];
+%     spikes =  find(data.spike_data(SpikeChan, (StartEventBin(trial) + StartOffset):(StopEventBin(trial) + StopOffset), trial) == 1 );   
+%     plot (spikes/1000,trial*ones(1,length(spikes)),'k.');
+%     hold on;
+% end
+% xlabel('Time (ms)');
+% ylabel('Trial Number');
+
+
+% figure
+% 
+% yy = 0;
+%    %now, remove trials from hor_disp and spike_rates that do not fall between BegTrial and EndTrial
+%    trials = 1:size(conditions,2);												% a vector of trial indices
+%    select_trials = ( (trials >= BegTrial) & (trials <= EndTrial) );  
+%    
+%    %analyze by unique condition
+% 	for cond = 1: num_conditions
+%      	% These next few lines check for trials belonging to a single condition
+%      	SetTrials(1,:) = (conditions(1,:) == unique_conds(cond,1) & select_trials); 	    
+%      	for modality = 1: num_modality         	
+%             NextSetTrials = (conditions(modality,:) == unique_conds(cond,modality) & select_trials); 
+%       	    SetTrials = SetTrials & NextSetTrials;				
+%         end	 
+%      
+%         reps = find(SetTrials==1); 
+%         num_reps = length(reps);		   
+%       
+%         spikes1 = [];    
+%         incr = (1 - 0.2)/(num_reps*2)
+%  	     % Now do cross correlograms 
+%    	   for trial = 1:num_reps
+%             spikes1 = [];
+%             spikes1 = find(data.spike_data(SpikeChan, (StartEventBin(reps(trial) ) + StartOffset):(StopEventBin(reps(trial) ) + StopOffset), reps(trial) ) == 1 );   
+%             plot (spikes1/1000,yy*ones(1,length(spikes1)),'k.');
+%             yy = yy + incr;
+%             hold on;
+%             yy = yy + incr;
+%        end   
+%         yy = yy + 0.2;
+%    end
+% ylim([0,yy]);
+% xlabel('Time (ms)');
+% ylabel('Trials Sorted by Condition Number');
+

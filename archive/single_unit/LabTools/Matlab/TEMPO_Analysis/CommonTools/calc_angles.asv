@@ -1,0 +1,278 @@
+function [stdev_orig, stdev_list] = calc_angles
+
+pref = [-35.35
+145.39
+-128.13
+-137.28
+-153.19
+-69.5
+115.01
+-43
+-28.14
+-105.89
+-116.88
+-37.19
+-56.72
+-139.52
+-75.04
+-112.63
+-34.82
+136.42
+-1.37
+-145.19
+-138.2
+-146.6
+6.69
+113.22
+-175.76
+106.49
+150.66
+-67.82
+-105.35
+106.87
+-162.07
+122.31
+-79.45
+-47.46
+121.05
+-126.86
+26.45
+-106.21
+-145.15
+-174.33
+166.69
+159.27
+174.31
+-156.84
+-29.91
+-125.75
+-140.59
+-88.36
+-142.85
+-82.96
+116.21
+116.52
+-21.16
+60.05
+153.84
+131.94
+99.74
+127.18
+-145.34
+168.75
+-159.67
+-160.54
+-78.6
+-78.48
+-31.51
+-106.14
+74.5
+179.5
+8.93
+40.45
+-51.83
+178.75
+-170.75
+-156.72
+-52.94
+-147.67
+-71.94
+93.04
+30.03
+-87.34
+55.06
+-44.18
+-126.34
+-137.13
+17.44
+171.69
+33.9
+-86.35
+66.59
+101.59
+62.03
+-96.91
+147.1
+135.53
+];
+
+off = [-75.98
+156.53
+-129.35
+-137.81
+-130.89
+-42.01
+37.56
+-23.55
+-28.88
+-139.26
+-37.91
+-30.53
+-102.21
+-143.57
+-168.85
+-103.42
+-96.64
+42.08
+11.01
+-155.61
+-149.88
+-143.01
+-12.9
+-31.34
+-173.91
+154.04
+154.72
+-62.55
+-61.88
+109.05
+109.48
+128.68
+-50.37
+-76.34
+-174.58
+16.92
+31.64
+-103.44
+-130.11
+160.66
+148.69
+146.62
+159.1
+-152.37
+-179.9
+-91.41
+-146.31
+-76.41
+-109.99
+-157.58
+153.61
+-85.41
+-147.41
+-130.67
+176.19
+7.82
+99.79
+114.08
+-143.38
+-144.74
+137.52
+120.51
+147.8
+160.01
+-1.39
+-151.41
+87.79
+-150.2
+15.15
+37.94
+-175.61
+-160.23
+-144.7
+-98.27
+-80.85
+-103.68
+16.63
+107.91
+-57.88
+-80.52
+-102.1
+125.09
+-99.46
+-114.11
+14
+169.13
+161.24
+-49.74
+22.83
+63.7
+28.57
+99.16
+138.49
+151.01
+];
+
+pref_adj = zeros(length(pref), 1);
+off_adj = zeros(length(off), 1);
+
+PATHOUT = 'Z:\Users\jerry\GradAnalysis\';    
+outfile = [PATHOUT 'SUvsMU_12.19.04.dat'];
+
+fid = fopen(outfile, 'a');
+
+for i=1:length(pref)
+   if pref(i) > 360
+      pref(i) = mod(pref(i), 360);
+   elseif pref(i) < -360
+      pref(i) = mod(pref(i), -360);
+   end
+   
+   if pref(i) < 0
+      if pref(i) < -180
+         pref_adj(i) = mod(pref(i), 180);
+      else
+         pref_adj(i) = mod(pref(i), -180);
+      end
+   elseif pref(i) > 0
+      if pref(i) > 180
+         pref_adj(i) = mod(pref(i), -180);
+      else
+         pref_adj(i) = mod(pref(i), 180);
+      end
+   end
+   
+   test1 = mod(off(i), 360);
+   test2 = mod(off(i), -360);
+      
+   if abs(pref_adj(i)-test1) < abs(pref_adj(i)-test2)
+      off_adj(i) = test1;
+   else
+      off_adj(i) = test2;
+   end
+   
+   line = sprintf(' %3.2f %3.2f\n', pref_adj(i), off_adj(i));
+   fprintf(fid, '%s', [line]);
+end
+
+fprintf(fid, '\r\n');
+fclose(fid);
+
+diff_rad = (pref_adj - off_adj) * (3.14159/180);
+sin_diff = sin(diff_rad);
+cos_diff = cos(diff_rad);
+sum_sin = sum(sin_diff(:));
+sum_cos = sum(cos_diff(:));
+r = sqrt(sum_sin^2+sum_cos^2);
+
+figure
+plot(pref_adj, [off_adj], '.');
+diff = abs(pref_adj - off_adj);
+stdev_orig = std(diff);
+
+%calculate z-value for Rayleigh's test
+
+%include the permutation technique here:
+do_permutation = 0;
+if do_permutation == 1
+    for i=1:10
+       rand_ind = randperm(length(off));
+       off_boot = zeros(length(off), 1);
+       off_randperm = off(rand_ind);
+       for j=1:length(pref)
+          test1 = mod(off_randperm(j), 360);
+          test2 = mod(off_randperm(j), -360);
+         
+          if abs(pref_adj(j)-test1) < abs(pref_adj(j)-test2)
+             off_boot(j) = test1;
+         else
+             off_boot(j) = test2;
+         end
+     end
+       diff = abs(pref_adj - off_boot);
+       stdev_list(i) = std(diff);
+    end
+
+    list = find(stdev_list <= stdev_orig);
+    sig = length(list)
+    p_val = sig/length(stdev_list)
+end

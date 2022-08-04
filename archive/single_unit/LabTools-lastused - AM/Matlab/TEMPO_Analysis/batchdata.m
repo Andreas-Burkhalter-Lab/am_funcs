@@ -1,0 +1,1 @@
+m1c37r2.htb 'Plot Tuning Curve' 1 36 1 'Visual Stimulus ON' 0 ' Visual Stimulus OFF' 0 'Good Trials'

@@ -1,0 +1,107 @@
+function plot_corr_speeds(mouse,varargin)
+if nargin>1
+    mouseNums=varargin{1};
+    expnum=varargin{2};
+    Fs=varargin{3};
+    if nargin>4
+        saveDir=varargin{4};
+    else     saveDir='F:\MA Data\Interneurons\PubFigs\CorrSpeed\';
+    end
+    
+else
+    mouseNums=1:length(mouse);
+    for m=mouseNums
+        expnum{m}=1:length(mouse(m).Falls);
+    end
+    Fs=4*ones(size(mouseNums));
+    saveDir='F:\MA Data\Interneurons\PubFigs\CorrSpeed\';
+    
+end
+if ~exist(saveDir,'dir')
+    mkdir(saveDir)
+end
+
+
+fcorr=cell(1);
+tcorr=cell(1);
+tmeanF=[];
+tsemF=[];
+tmeanT=[];
+tsemT=[];
+for m=mouseNums
+    mfcorr=cell(1);
+    mtcorr=cell(1);
+    for e=expnum{m}
+        m
+        e
+        f=(mouse(m).Forwards{e});
+        t=sqrt((mouse(m).Forwards{e}).^2+mouse(m).Rotations{e}.^2);
+        dFF=mouse(m).Falls{e};
+        fcorrtemp=zeros(size(dFF,2),1);
+        tcorrtemp=fcorrtemp;
+        for ii=1:size(f,2)
+            temp=corrcoef(f(:,ii), dFF(:,ii));
+            fcorrtemp(ii)=temp(2,1);
+            temp=corrcoef(t(:,ii), dFF(:,ii));
+            tcorrtemp(ii)=temp(2,1);
+        end
+        mfcorr{e}=fcorrtemp;
+        mtcorr{e}=tcorrtemp;
+        
+    end
+    meanf=cellfun(@nanmean,mfcorr);
+    tmeanF=[tmeanF nanmean(meanf)];
+    semf=cellfun(@nanstd,mfcorr)./cellfun(@length,mfcorr);
+    tsemF=[tsemF nanmean(semf)];
+    figure
+    hold on
+    for ii=1:length(mfcorr)
+       
+    end
+    figure
+    errorbar(meanf,semf,'r+')
+    title(['Mean Correlation with Forward Speed, Mouse ',num2str(m)])
+    saveas(gca,[saveDir,'Forward Speed Corr','Mouse ',num2str(m),'.jpg']);
+    savefig([saveDir,'Forward Speed Corr','Mouse ',num2str(m),'.fig']);
+    meant=cellfun(@mean,mtcorr);
+    tmeanT=[tmeanT nanmean(meant)];
+    semt=cellfun(@std,mtcorr)./cellfun(@length,mtcorr);
+    tsemT=[tsemT nanmean(semt)];
+    figure
+    errorbar(meant,semt,'r+')
+    title(['Mean Correlation with Total Speed, Mouse ',num2str(m)])
+    saveas(gca,[saveDir,'Total Speed Corr','Mouse ',num2str(m),'.jpg']);
+    savefig([saveDir,'Total Speed Corr','Mouse ',num2str(m),'.fig']);
+    
+    fcorr{m}=mfcorr;
+    tcorr{m}=mtcorr;
+end
+
+figure;
+errorbar(tmeanT,tsemT,'r+')
+title('All mice correlation with Total Speed');
+saveas(gca,[saveDir,'Total Speed Corr','All Mice','.jpg']);
+savefig([saveDir,'Total Speed Corr','All Mice','.fig']);
+figure;
+errorbar(tmeanF,tsemF,'r+')
+title('All mice correlation with Forward Speed');
+saveas(gca,[saveDir,'Total Speed Corr','All Mice','.jpg']);
+savefig([saveDir,'Total Speed Corr','All Mice','.fig']);
+
+% formeans=cellfun(@mean,fcorr);
+% forsems=cellfun(@std,fcorr)./cellfun(@length,fcorr);
+% totmeans=cellfun(@mean,tcorr);
+% totsems=cellfun(@std,tcorr)./cellfun(@length,tcorr);
+%
+%
+% figure;
+% errorbar(formeans,forsems,'r+')
+% title(['Correlation with Forward, all Mice'])
+%         saveas(gca,[saveDir,'Forward Speed Corr','All Mice','.jpg']);
+%         savefig([saveDir,'Forward Speed Corr','All Mice','.fig']);
+%
+% figure;
+% errorbar(totmeans,totsems,'r+')
+% title(['Correlation with Total, all Mice'])
+%         saveas(gca,[saveDir,'Total Speed Corr','All Mice','.jpg']);
+%         savefig([saveDir,'Total Speed Corr','All Mice','.fig']);

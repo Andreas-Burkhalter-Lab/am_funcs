@@ -1,0 +1,89 @@
+% function autoROI(pathplane,fileplane,pathref,planeref)
+[fileplane,pathplane]=uigetfile('Motion corrected plane to add rois');
+[fileref,pathref]=uigetfile('Select Reference Frame');
+
+load([pathplane,fileplane]);
+maskref=load([pathref,fileref],'masks');
+ref_centroids=find_centroids(maskref.masks);
+numref=size(maskref,1);
+newmasks=zeros(size(maskref.masks,1),size(video,1),size(video,2));
+frame=mean(video,3);
+rois=bwlabel(frame>(mean(frame(:)+2*std(frame(:)))));
+rinfo=regionprops(rois);
+num_rois=length(rinfo);
+centroids=cat(1,rinfo.Centroid);
+area=cat(1,rinfo.Area);
+sizeable=find(area>150);
+distmat=pdist2(ref_centroids,centroids(area>150,:));
+topleft=find(distmat(1,:)==min(distmat(1,:)));
+
+nx=centroids(sizeable(topleft),1);
+ny=centroids(sizeable(topleft),2);
+
+distx=nx-ref_centroids(1,1);
+disty=ny-ref_centroids(1,2);
+
+for i=1:numref
+    i=3;
+    tempmask=zeros(size(frame));
+    m=squeeze(maskref.masks(i,:,:));
+    if(size(m)~=size(tempmask))
+       m=padarray(m,[size(frame,1)-size(m,1),size(frame,2)-size(m,2)],'post');
+    end
+    [r,c]=find(m>0);
+    r=round(r+disty);
+    c=round(c+distx);
+    
+    locs=sub2ind(size(frame),r,c);
+    tempmask(locs)=ones(size(tempmask(locs)));
+    newmasks(i,:,:)=tempmask;
+end
+numframes=length(chone);
+N=size(chone,2);
+M=size(chone,3);
+figure
+imshow(mat2gray(frame));
+saveas(gcf,[pathplane,fileplane(1:end-4),'frame.eps'])
+figure
+indmasks=bsxfun(@times,newmasks,(1:size(newmasks,1))');
+saveas(gcf,[pathplane,fileplane(1:end-4),'masks.eps'])
+
+imagesc(squeeze(sum(indmasks,1)));
+
+F=extract_F_poly_from_auto_ROI(newmasks,video);
+Fc=zeros(size(F));
+Fs=zeros(size(F));
+for j=1:size(F,2)
+    
+    junk=F(:,j);
+%     junk=junk;
+    
+    window=round(numframes/numwindow);
+    junk2=zeros(size(junk));
+    for k=1:length(junk)
+        cut=junk(max(1,k-window):min(numframes,k+window));
+        cutsort=sort(cut);
+        a=round(length(cut)*.08);
+        junk2(k)=cutsort(a);
+    end
+    Fc(:,j)=(junk./junk2);
+    maxval=max(Fc(:,j));
+    Fc(:,j)=(Fc(:,j)-median(Fc(:,j)))/max((Fc(:,j)-median(Fc(:,j))));
+    Fc(:,j)=maxval*Fc(:,j);
+    
+    %Fc(:,i)=(junk-junk2)-mean((junk-junk2));
+end
+
+
+fullFname=[path [filename(1:end-4) '_roibyauto_F.mat']];
+save(fullFname,'F','Fc','colors','masks','numframes','N','M','numwindow');
+
+
+
+
+
+
+
+
+
+

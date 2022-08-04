@@ -1,0 +1,149 @@
+% function Gauss2D_Protocol(data, Protocol, Analysis, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, PATH, FILE);
+% 
+%     ProtocolDefs;
+%     symbols = {'ko' 'k*' 'go' 'mo' 'b*' 'r*' 'g*' 'c*'};
+%     lines = {'k-' 'k--' 'g-' 'm-' 'b--' 'r--' 'g--' 'c--'};
+%     
+%     
+%     %Fixation patch in this protocol is patch 3.  find fix coordinates
+%     fix_x_pos = data.dots_params(DOTS_AP_XCTR,:,PATCH3);
+%     fix_y_pos = data.dots_params(DOTS_AP_YCTR,:,PATCH3);
+%     
+% 
+%     % get the position values for each condition in the condition_list[]
+%     x_pos = data.dots_params(DOTS_AP_XCTR,:,PATCH1);
+%     
+%     % get the position values for each condition in the condition_list[]
+%     y_pos = data.dots_params(DOTS_AP_YCTR,:,PATCH1);
+%     
+%     % subtract the fixation coordinates from the x and y position
+%     x_pos = x_pos - fix_x_pos;
+%     y_pos = y_pos - fix_y_pos;
+% 
+%     rf_xctr = data.one_time_params(RF_XCTR);
+%     rf_yctr = data.one_time_params(RF_YCTR);
+%     
+%     %get null trials for spontaneous activity
+%     null_trials = logical(y_pos == data.one_time_params(NULL_VALUE));
+%     control_trials = logical(y_pos == data.one_time_params(PATCH_OFF));
+%     
+%     %now get unique values for both x and y position
+%     unique_x_pos = munique(x_pos(~null_trials)');
+%     unique_y_pos = munique(y_pos(~null_trials)');
+%     
+%  
+%     %now, get the firing rates for all the trials 
+%     spike_rates = data.spike_rates(SpikeChan, :);
+%  
+%     %now, remove trials from hor_disp and spike_rates that do not fall between BegTrial and EndTrial
+%     trials = 1:length(x_pos);		% a vector of trial indices
+%     select_trials = ( (trials >= BegTrial) & (trials <= EndTrial) );
+% 
+%     % Calculate spontaneous rates before looping through so can calculate DTI
+%     null_rate = mean(data.spike_rates(SpikeChan, null_trials & select_trials));
+%     
+%     Z = zeros(length(unique_x_pos)* length(unique_y_pos), 3);
+%     display_contours = zeros(length(unique_x_pos), length(unique_y_pos));
+%             
+%     for i = 1:length(unique_x_pos)
+%         for j = 1:length(unique_y_pos)
+%             indices = logical((x_pos == unique_x_pos(i)) & (y_pos == unique_y_pos(j))& (y_pos ~= NULL_VALUE) & (y_pos ~= PATCH_OFF) & (y_pos ~= LEYE_CONTROL) & (x_pos ~= REYE_CONTROL) & (x_pos ~= UNCORR_CONTROL) );            
+%             Z((i-1)*(length(unique_y_pos)) + j, 1) = unique_x_pos(i);
+%             Z((i-1)*(length(unique_y_pos)) + j, 2) = unique_y_pos(j);
+%             Z((i-1)*(length(unique_y_pos)) + j, 3) = mean(spike_rates(indices));
+%         end
+%     end
+%     
+%     for i=1:length(unique_x_pos)
+%         display_contours(:, i) = Z((i-1)*(length(unique_y_pos))+1:(i-1)*(length(unique_y_pos))+(length(unique_y_pos)), 3)
+%     end
+%     
+%     %display_contours = flipud(display_contours);
+%     
+%     figure
+%     contourf(unique_x_pos, unique_y_pos, display_contours)
+%     Title(FILE);  % Add in a title JWN 072405
+%     ax1 = axis;
+%     colorbar
+%     axis image
+%     
+%     raw = [x_pos' y_pos' spike_rates'];
+%     means = Z;
+%       
+%     %fit data here
+%     pars = gauss2Dfit(means,raw)
+%     
+%     %create interpolated arrays for data display
+%     x_interp = unique_x_pos(1): 1 : unique_x_pos(length(unique_x_pos));
+%     y_interp = unique_y_pos(1): 1 : unique_y_pos(length(unique_y_pos));
+%     z_gauss = zeros(length(x_interp), length(y_interp));
+%       
+%     %obtain fitted data for interpolated arrays
+%     for i=1:length(x_interp)
+%         for j = 1:length(y_interp)
+%             z_gauss(i,j) =  gauss2Dfunc(x_interp(i),y_interp(j), pars);
+%         end
+%     end
+%     
+%     z_gauss = rot90(z_gauss);
+%     z_gauss = rot90(z_gauss);
+%     z_gauss = rot90(z_gauss);
+%     z_gauss = fliplr(z_gauss);
+%     figure
+%     contourf(x_interp, y_interp, z_gauss)
+%     colorbar
+%     axis image
+%     
+%     x_interp
+%     y_interp
+%     z_gauss
+%     
+%     %print out parameters of fit into a file for gradient analysis
+%     line = '';
+%     data_string = '';
+%     printme = 0;
+%     if (printme==1)
+%         %pathsize = size(PATH,2) - 1;
+%         %while PATH(pathsize) ~='\'	%Analysis directory is one branch below Raw Data Dir
+%         %    pathsize = pathsize - 1;
+%         %end   
+%         PATHOUT = 'Z:\Data\Tempo\GradAnalysis\';
+%            
+%         line = sprintf('%s %3.2f %3.2f', FILE, pars(4), pars(6));
+%         data_string = strcat(line, data_string);
+% 
+%         %print grad metrics
+%         outfile = [PATHOUT 'RFMap_params.dat'];
+%         fid = fopen(outfile, 'a');
+%         fprintf(fid, '%s', [data_string]);
+%         fprintf(fid, '\r\n');
+%         fclose(fid);
+%     end
+% 
+%     
+%     
+%     %print out the parameters of the fit
+%     legend_figure = figure;
+%     set(legend_figure, 'Position', [1000 773 180 100], 'Name', 'Fit Parameters', 'MenuBar', 'none');
+%     axis([0 1 0 7]);
+%     axis('off')
+%     hold on
+% 
+%     string = sprintf('Base Rate = %1.3f', pars(1));
+%     text(0, 6+.25, string, 'FontSize', 8);
+%     string = sprintf('Amplitude = %1.3f', pars(2));
+%     text(0, 5+.25, string, 'FontSize', 8);
+%     string = sprintf('X Width = %1.3f', pars(4));
+%     text(0, 4+.25, string, 'FontSize', 8);
+%     string = sprintf('Y Width = %1.3f', pars(6));
+%     text(0, 3+.25, string, 'FontSize', 8);
+%     string = sprintf('Fitted CTR = (%1.3f, %1.3f)', pars(3), pars(5));
+%     text(0, 2+.25, string, 'FontSize', 8);
+%     string = sprintf('RFPLOT CTR = (%1.3f, %1.3f)', rf_xctr, rf_yctr);
+%     text(0, 1+.25, string, 'FontSize', 8); 
+%     hold off
+% 
+% % print(2); % Uncomment for autoprinting.  JWN 081605
+% % close(2); % Uncomment for autoprinting.
+% % close(3);
+% % close(4);

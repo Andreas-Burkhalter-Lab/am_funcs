@@ -1,0 +1,3 @@
+FILE			 PrfOR	 PrfSF	 PrfTF	 RFXctr	 RFYctr	 RFDiam	 GrType	 MaxLoc	 MaxRsp	 MinLoc	 MinRsp	 Spont	 CMI		 AnovaP	 SFDI  	 VarTerm	 MaxX 	 MinX 	 RsqMn	 PMean	 RsqRaw	 Praw		 Chi2		 ChiP		 Rmax			 C50		 n		 Offset	 Halfmax_slope	
+m52512c2r10.htb	   0.0	  0.03	 2.000	  0.00	  0.00	 40.00	   0.0	 1.0000	  8.00	 0.1000	  3.88	   NaN	   NaN	 0.96084730	 0.328	  1.311	  1.00	  0.10	  0.3927	 0.0525	 0.03310887	 0.2488	 0.50910418	 0.9977	 5.71378548	 79.63	  4.18	 3.8771	 3.4509	 
+m61212c1r10.htb	 180.0	  0.05	 2.000	 -10.00	 -10.00	 40.00	   0.0	 1.0000	  0.76	 0.1000	  0.38	   NaN	   NaN	 0.51682826	 0.359	  0.469	  1.00	  0.10	  0.2331	 0.1576	 0.02646276	 0.1603	 1.11346865	 0.9809	 0.61103240	 94.89	 10.00	 0.3750	 0.2476	 

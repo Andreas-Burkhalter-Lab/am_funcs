@@ -1,0 +1,194 @@
+function [handles selectedTraces] = arrayTracesAsInputMap_currentClamp_pickTraces(map,varargin)      %%% AM 4/7/15 added varargin to allow for plot scale bar size in mV and # columns specification
+
+%%% last edited 8/29/15 on recording computer
+%%% AM edited to use with current clamp
+%%% AM added yscalebar specification and do_subplot argument
+nTracesToSelect = 2; 
+
+if ~isempty(varargin)
+    yminin = varargin{:}{:}{1};
+    ymaxin = varargin{:}{:}{2};
+    do_subplot = true;
+else
+    ymaxin = 50;     %% 50mV scale bar
+    yminin = -30;
+    do_subplot = false;
+end
+%%
+
+% arrayTracesAsInputMap
+%
+% Plots the set of map traces as a map.
+%
+% originally arrayTracesAsMap
+%
+% Editing:
+% gs april 2005 -- privatize version for new analysis software 
+% lp nov 2006--customized for subcellular maps
+% -----------------------------------------------------------------
+
+flipFlag = 0;
+
+% data
+array = map.averageMap;
+traceLength = size(array,1 );
+mapPattern = map.pattern{1};
+for n=1:numel(mapPattern); %LTP!
+    newArray(:,find(mapPattern==n)) = array(:,n);
+end
+
+try
+    sr =map.samplingRate;
+catch
+    sr = 10000; 
+    disp('Using sample rate of 10K by default');
+    beep
+end
+
+startTime = 1;
+stopTime = traceLength;
+showStart = 1000;
+showStop = 2500;
+
+array = newArray(startTime:stopTime, :);
+[rows,cols] = size(array);
+totalTime = (rows-1)/sr; 
+xTimeAxis = linspace(0, totalTime, rows)';
+traceAxis = ( 1 : cols );
+xAxisPlotted = xTimeAxis(showStart:showStop); % AM added
+% quarterPoint = round(cols/4);
+% sixteenthPoint = round(cols/16);
+
+% [sizeX, sizeY] = size(state.uncaging.analysis.pulsePattern);
+[sizeY, sizeX] = size(mapPattern); % AM switched sizeX and sizeY (corrected) 6/16/15
+
+ yFactor = 100; % offset, in mV <--------------------------  %%% AM 4/7/15 switched comment 'pA' to 'mV'
+%yFactor = handles.data.analysis.traceMapYFactor;
+scaleBarTxt = 'mV';  %%% AM 4/7/15 changed pA to mV
+% if ~state.uncaging.map.cellAttachedCheck
+%     yFactor = 100; % 100 pA offset
+%     scaleBarTxt = 'pA';
+% elseif state.uncaging.map.cellAttachedCheck
+%     yFactor = 5; % 10 mV offset 
+%     scaleBarTxt = 'mV';
+% end
+if flipFlag == 1
+    yFactor = -yFactor;
+end
+offsetVector = yFactor * ( 0 : cols-1 );
+offsetArray = repmat(offsetVector, rows, 1);
+array = array-offsetArray;
+
+% set up the figure -------------------------------------------------------------
+x = .05; 
+y = .11; 
+w = .5; 
+h = .8; 
+handles.data.map.mapActive.hTraceMapFig = figure('Units', 'normalized', ...
+    'Position', [x y w h], 'Name', 'arrayTracesAsMap', ...
+    'NumberTitle', 'off', 'Color', 'w');
+hold on
+% try
+%     set(gcf, 'ButtonDownFcn', 'arrayTracesAsMap_tweakFig');
+% catch
+% end
+subplotRows = 1; subplotCols = sizeY; plotnum = 0;
+
+count = 0; % for iterating subplot labels
+for N = 1:sizeX % AM 6/16/15 switched sizeY for sizeX
+    startInd = (N-1)*sizeX + 1;
+    endInd = N*sizeX;
+
+%% AM 4/7/15 added section to allow for using subplots
+    if do_subplot
+        colors = get(gca,'ColorOrder');
+        set(gca,'XColor','w','YColor','w','TickDir','out'); % make border invisible for easier viewing
+        for thisrow = 1:sizeY % AM 6/16/15 switched sizeX for sizeY
+            count = count+1; % indexing for selecting a trace to pull out and plot individually
+            array(:,(N-1)*sizeY+thisrow) =array(:,(N-1)*sizeY+thisrow) + 100*((N-1)*sizeY+thisrow-1);      %% remove y offset
+            plotHandles(count) = subaxis(sizeY, sizeX, N, thisrow, 1.4, 1.4, 'holdaxis', 1); % AM 6/16/15 switched sizeY<->sizeX and N<->thisrow
+            tracesPlotted{count} = array(showStart:showStop,(N-1)*sizeY+thisrow); 
+            lineHandles(count) = plot(xAxisPlotted, tracesPlotted{count}, 'color',colors(rem(thisrow-1,size(colors,1))+1,:));
+            xlim([showStart-200 showStop]/sr);
+            ylim([yminin ymaxin]);  %% AM added 4/7 - might need to comment out if do_subplot is off
+            set(gca,'XColor','w','YColor','w','TickDir','out'); % make border invisible for easier viewing
+            titleHandle = title(num2str(count),'FontSize',18);
+            set(titleHandle,'Position',get(titleHandle,'Position') - [0 5.6 0]); % shift labels down
+        end
+        
+
+        
+        
+        %%
+    else
+    plotnum = plotnum+1;
+%     hsub(plotnum) = subplot(subplotRows,subplotCols,plotnum);        
+    pos1 = 0.025 + (N - 1)*(0.96/sizeY);
+    pos2 = 0.02;
+    pos3 = 0.07*(16/sizeY);
+    pos4 = 0.96;
+    hsub(N) = axes('Position', [pos1 pos2 pos3 pos4]);      
+    plot(xTimeAxis(showStart:showStop), array(showStart:showStop,startInd:endInd));
+    hold on;
+    
+%     minval = min(mean(array(1:100,startInd:endInd)));
+%     maxval = max(mean(array(1:100,startInd:endInd)));
+%     tweakFactor = abs(maxval - minval)*0.05;
+%     yrange = [minval-tweakFactor maxval+tweakFactor];
+        minval = min(mean(array(1:100,startInd:endInd)));
+        maxval = max(mean(array(1:100,startInd:endInd)));    
+        tweakFactor = abs(maxval - minval)*0.05;
+        yrange = [minval-tweakFactor maxval+tweakFactor]; 
+        set(gca, 'YLim', yrange);
+        set(gca, 'XLim', [(showStart-200)/sr (showStop+200)/sr]);
+        xlabel('Seconds');
+    end
+end
+
+%% Let user select traces to plot individually and output data from.    
+% Note: this trace is averaged and baseline-normalized by mhaveragedMapsAnalysisNewEphys20100406_AM....  
+%   the non-normalized traces are contained in map.traces.
+fullTraceList = 1:count;
+traceChoice = []; % initialize
+for thisTrace = 1:nTracesToSelect
+    traceMenu = cellstr(num2str(fullTraceList'));
+    for i = 1:length(traceChoice)
+        traceMenu{traceChoice(i)} = 'Already selected';
+    end
+    traceChoice(thisTrace) = menu('Select a trace.',traceMenu); % Open a menu box for selecting a trace index
+    set(plotHandles(traceChoice),'Color',[0.3 1 0.9]); % mark selected trace 
+    selectedTraces(:,thisTrace) = tracesPlotted{traceChoice(thisTrace)};
+end
+    
+close(handles.data.map.mapActive.hTraceMapFig); % close the grid of all traces
+
+figure
+for thisTrace = 1:nTracesToSelect
+    subplot(nTracesToSelect,1,thisTrace)
+    plot(selectedTraces(:,thisTrace))
+end
+
+%%
+
+titleStr = [map.experimentNumber];
+if ~do_subplot      %% AM 4/7/15 added conditional
+    text('String', titleStr, 'Units', 'Normalized', 'Position', [0 1.005], ...
+        'FontSize', 12, 'FontWeight', 'Bold', 'Parent', hsub(1), ...
+        'Tag', 'singleTraceMap');
+    
+    % scalebar lines
+    Y = mean(array(:,end))+yFactor/4;       
+    % Y = min(get(gca, 'YLim'));
+    hscalebar = line([.1 .2], [Y Y]);
+    set(hscalebar, 'Color', 'k', 'Tag', 'scaleBarLines');
+    hscalebar = line([.1 .1], [Y Y+yFactor/2]);
+    set(hscalebar, 'Color', 'k', 'Tag', 'scaleBarLines');
+    
+    % scalebar text
+    ht(1) = text(.12, Y+yFactor/6, '100 ms'); 
+    ht(2) = text(.12, Y+yFactor/3, [num2str(yFactor/2) ' ' scaleBarTxt]); 
+    set(ht, 'Color', 'k', 'FontSize', 8, 'Tag', 'scaleBarText');
+end
+
+
+

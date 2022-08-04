@@ -1,0 +1,143 @@
+function handles = arrayTracesAsInputMap_AM(map)
+% arrayTracesAsInputMap
+%
+% Plots the set of map traces as a map.
+%
+% originally arrayTracesAsMap
+%
+% Editing:
+% gs april 2005 -- privatize version for new analysis software 
+% lp nov 2006--customized for subcellular maps
+% AM 4/8/2015 - added options to customize color vs. black traces and trace
+%      line width  
+% -----------------------------------------------------------------
+
+global traces_line_width traces_colored;
+flipFlag = 0;
+
+% data
+array = map.averageMap;
+traceLength = size(array,1 );
+mapPattern = map.pattern{1};
+for n=1:numel(mapPattern); %LTP!
+    newArray(:,find(mapPattern==n)) = array(:,n);
+end
+
+try
+    sr =map.samplingRate;
+catch
+    sr = 10000; 
+    disp('Using sample rate of 10K by default');
+    beep
+end
+
+startTime = 1;
+stopTime = traceLength;
+
+showStart = 1000;
+showStop = 2500; %showStop = 5750;
+%showStart = round(handles.data.analysis.traceMapShowStart * sr);
+%showStop = round(handles.data.analysis.traceMapShowStop * sr);
+
+array = newArray(startTime:stopTime, :);
+[rows,cols] = size(array);
+totalTime = (rows-1)/sr; 
+xTimeAxis = linspace(0, totalTime, rows)';
+traceAxis = ( 1 : cols );
+% quarterPoint = round(cols/4);
+% sixteenthPoint = round(cols/16);
+
+% [sizeX, sizeY] = size(state.uncaging.analysis.pulsePattern);
+[sizeX, sizeY] = size(mapPattern);
+
+ yFactor = 100; % offset, in pA <--------------------------
+%yFactor = handles.data.analysis.traceMapYFactor;
+scaleBarTxt = 'pA';
+% if ~state.uncaging.map.cellAttachedCheck
+%     yFactor = 100; % 100 pA offset
+%     scaleBarTxt = 'pA';
+% elseif state.uncaging.map.cellAttachedCheck
+%     yFactor = 5; % 10 mV offset 
+%     scaleBarTxt = 'mV';
+% end
+if flipFlag == 1
+    yFactor = -yFactor;
+end
+offsetVector = yFactor * ( 0 : cols-1 );
+offsetArray = repmat(offsetVector, rows, 1);
+array = array-offsetArray;
+
+% set up the figure -------------------------------------------------------------
+x = .05; 
+y = .11; 
+w = .5; 
+h = .8; 
+handles.data.map.mapActive.hTraceMapFig = figure('Units', 'normalized', ...
+    'Position', [x y w h], 'Name', 'arrayTracesAsMap', ...
+    'NumberTitle', 'off', 'Color', 'w');
+hold on
+% try
+%     set(gcf, 'ButtonDownFcn', 'arrayTracesAsMap_tweakFig');
+% catch
+% end
+subplotRows = 1; subplotCols = sizeY; plotnum = 0;
+
+for N = 1:sizeY
+    startInd = (N-1)*sizeX + 1;
+    endInd = N*sizeX;
+    plotnum = plotnum+1;
+
+    %     hsub(plotnum) = subplot(subplotRows,subplotCols,plotnum);
+    
+    pos1 = 0.025 + (N - 1)*(0.96/sizeY);
+    pos2 = 0.02;
+    pos3 = 0.07*(16/sizeY);
+    pos4 = 0.96;
+    hsub(N) = axes('Position', [pos1 pos2 pos3 pos4]);
+
+%     set(gca, 'Position', );
+
+    traces_plot = plot(xTimeAxis(showStart:showStop), array(showStart:showStop,startInd:endInd));
+    if ~traces_colored
+        set(traces_plot,'Color','k');
+    end
+    set(traces_plot,'LineWidth',traces_line_width);
+    
+    hold on;
+    
+    
+%     minval = min(mean(array(1:100,startInd:endInd)));
+%     maxval = max(mean(array(1:100,startInd:endInd)));
+%     tweakFactor = abs(maxval - minval)*0.05;
+%     yrange = [minval-tweakFactor maxval+tweakFactor];
+    minval = min(mean(array(1:100,startInd:endInd)));
+    maxval = max(mean(array(1:100,startInd:endInd)));
+    tweakFactor = abs(maxval - minval)*0.05;
+    yrange = [minval-tweakFactor maxval+tweakFactor];
+    set(gca, 'YLim', yrange);
+    set(gca, 'XLim', [(showStart-200)/sr (showStop+200)/sr]);
+    xlabel('Seconds');
+end
+set(findobj(gcf, 'Type', 'axes'), 'Visible', 'off');
+
+% title
+%k = strfind(handles.data.map.mapActive.directory, '\');
+% titleStr = [handles.data.map.mapActive.directory(k(end-2)+1:k(end-1)-1) ', ' ...
+%     handles.data.map.mapActive.directory(k(end)+1:end)];
+titleStr = [map.experimentNumber];
+text('String', titleStr, 'Units', 'Normalized', 'Position', [0 1.005], ...
+    'FontSize', 12, 'FontWeight', 'Bold', 'Parent', hsub(1), ...
+    'Tag', 'singleTraceMap');
+
+% scalebar lines
+Y = mean(array(:,end))+yFactor/4;
+% Y = min(get(gca, 'YLim'));
+hscalebar = line([.1 .2], [Y Y]);
+set(hscalebar, 'Color', 'k', 'Tag', 'scaleBarLines');
+hscalebar = line([.1 .1], [Y Y+yFactor/2]);
+set(hscalebar, 'Color', 'k', 'Tag', 'scaleBarLines');
+
+% scalebar text
+ht(1) = text(.12, Y+yFactor/6, '100 ms'); 
+ht(2) = text(.12, Y+yFactor/3, [num2str(yFactor/2) ' ' scaleBarTxt]); 
+set(ht, 'Color', 'k', 'FontSize', 8, 'Tag', 'scaleBarText');

@@ -1,0 +1,15 @@
+handle = cedFunction('SonOpenOldFile', 'm2c256r2sorted.smr', 1);
+
+if (handle < 0)
+    return;
+end
+
+code = cedFunction('SonChanKind', handle, 6);
+
+% Maxtime
+maxtime = cedFunction('SonGetMaxT
+
+% Get Event Data
+%cedFunction('SonGetEventData', handle, 6, 10000
+
+cedFunction('SonCloseFile', handle);

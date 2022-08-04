@@ -1,0 +1,18 @@
+function z = simultaneous_sin_fit(q, x)
+global num_fits trial_sizes;
+
+q_short = q(1:5);
+z(1:trial_sizes(1)) = sin_exp_func(x(1:trial_sizes(1)),q_short);
+
+index = 6;
+for i=2:num_fits
+   q_short(1) = q(index);
+   q_short(4) = q(index+1);
+   q_short(5) = q(index+2);
+   index = index + 3;
+   
+   z(sum(trial_sizes(1:num_fits-1))+1:sum(trial_sizes(1:num_fits))) = sin_exp_func(x(sum(trial_sizes(1:num_fits-1))+1:sum(trial_sizes(1:num_fits))), q_short);
+end
+z = z';
+%threshold the fitted values (don't allow less than zero)
+z(z<0) =0;

@@ -1,0 +1,36 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: CedFunction - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\Chris\LOCALS~1\Temp\RSP7D5.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "_AFXDLL" /Fp"Debug/CedFunction.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"Z:\LabTools\Mex Projects\CedFunction\main.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\Chris\LOCALS~1\Temp\RSP7D5.tmp" 
+Creating temporary file "C:\DOCUME~1\Chris\LOCALS~1\Temp\RSP7D6.tmp" with contents
+[
+libeng.lib libmat.lib libmmfile.lib libmatlb.lib son32.lib libmx.lib libmex.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/CedFunction.pdb" /debug /machine:I386 /out:"Debug/CedFunction.exe" /pdbtype:sept 
+".\Debug\main.obj"
+".\Debug\mexversion.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\Chris\LOCALS~1\Temp\RSP7D6.tmp"
+<h3>Output Window</h3>
+Compiling...
+main.c
+Linking...
+MSVCRTD.lib(crtexe.obj) : error LNK2001: unresolved external symbol _main
+Debug/CedFunction.exe : fatal error LNK1120: 1 unresolved externals
+Error executing link.exe.
+
+
+
+<h3>Results</h3>
+CedFunction.exe - 2 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

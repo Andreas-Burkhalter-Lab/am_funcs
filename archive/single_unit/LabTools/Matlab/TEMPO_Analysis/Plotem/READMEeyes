@@ -1,0 +1,21 @@
+FILE:  READMEeyes
+PATH:  /HOME/crista/matlab/eyes
+
+The purpose of this file is to provide a brief overview of the eye 
+movement analysis tools (matlab functions) that exist in this directory.
+
+The primary program is plotem.m.  It is an interactive program that
+lets the user view eye movement data and corresponding trial events and
+spikes.  It requires (that is, attempts to load) the .s, .ras, .index,
+and .tim and .e1h and .e1v files (these latter are eye movement data files).
+To analyze data, user needs these files, and will probably want to check
+the defaults script plotemdefaults.m to see if the data in question is
+accounted for; this is not absolutely necessary, however, as it is possible
+to enter data paths and such directly into the plotem user interface.
+
+A more complete description of how plotem works and what it does is pending.
+It calls other programs, all of which are found in this same directory.
+
+A secondary program, getem.m, does the same things as plotem.m in terms of
+loading and modifying data, but without the plotting, such that it can
+be run in an automated loop when compiling data across experiments.

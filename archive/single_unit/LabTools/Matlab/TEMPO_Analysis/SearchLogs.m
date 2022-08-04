@@ -1,0 +1,222 @@
+%-- SearchLogs.m -- This script can search through a directory of TEMPO .log files, select files based on
+%  protocol and parameter criteria that the user sets, and then generate a batch file for use with 'batch_gui'.
+%   Greg DeAngelis, 9/25/01
+%   NOTE: it would be great to put a GUI on this.
+clear;  %clear the workspace
+
+Path_Defs;
+TEMPO_Defs;
+ProtocolDefs;
+
+%---- THESE ARE PARAMS FOR USER TO SET ------------------
+%PATH = 'Z:\Data\Tempo\Robbins\Raw\';
+PATH = 'Z:\Data\Tempo\Ben\Raw\';
+%PATH = 'Z:\Data\Tempo\Jerry\Raw\';
+%PATH = 'Z:\Data\MOOG\Que\Raw\';
+%PATH = 'Z:\Data\MOOG\Zebulon\Raw\';
+FILES2SEARCH = '*.log';
+%CELL_RANGE = [309:1000];
+%CELL_RANGE = [643:760];
+%CELL_RANGE = [2 15 26 32 52 57 64 69 76 95 108 141 145 150 159 175 219 232 245 254 267 274 308 338 345 353 360 369 419 431 493 504 521 547 552 573 579 590 596 604 623 646 659 669 677 690 702 726];
+CELL_RANGE = [615 642 655 710 723 740 769 792 803 807 827 856 869 888 908 916 944 950 956 965 978 986 1004 1018 1037 1070 1077 1147 1160 1197];
+RUN_RANGE = [1:80];
+
+%SELECT_PROTOCOLS = [DIRECTION_TUNING SPEED_TUNING HDISP_TUNING SIZE_TUNING RF_MAPPING];
+%SELECT_PROTOCOLS = [SURF_DEPTH_TUNING];
+%SELECT_PROTOCOLS = [SLANT_TUNING];
+%SELECT_PROTOCOLS = [SIM_DIST_DISP_ONLY];
+%SELECT_PROTOCOLS = [DIRECTION_TUNING SPEED_TUNING HDISP_TUNING SIZE_TUNING RF_MAPPING SIM_DIST_DISP_ONLY];
+%SELECT_PROTOCOLS = [DIRECTION_DISCRIM];
+%SELECT_PROTOCOLS = [SIM_DIST_CURVATURE_DISCRIM];
+%SELECT_PROTOCOLS = [DIRECTION_TUNING_3D DIR3D_VARY_FIXATION];
+SELECT_PROTOCOLS = [DIRECTION_TUNING SPEED_TUNING HDISP_TUNING SIZE_TUNING RF_MAPPING EYE_CALIBRATION DEPTH_DISCRIM STEREOACUITY];
+
+ANALYSIS_TO_PERFORM{DIRECTION_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{SPEED_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{HDISP_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{SIZE_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{RF_MAPPING+1} = 'Fit with 2D Gaussian';
+ANALYSIS_TO_PERFORM{SURROUND_MAPPING+1} = 'Plot Surround Response Map';
+ANALYSIS_TO_PERFORM{DEPTH_DISCRIM_NOVAR+1} = 'Plot Psychometric Var/Novar';
+ANALYSIS_TO_PERFORM{DEPTH_DISCRIM+1} = 'Plot Psychometric Only';
+ANALYSIS_TO_PERFORM{DIRECTION_DISCRIM+1} = 'Plot Neurometric/Psychometric';
+%ANALYSIS_TO_PERFORM{DIRECTION_TUNING_3D+1} = 'Plot Tuning Surface';
+%ANALYSIS_TO_PERFORM{DIR3D_VARY_FIXATION+1} = 'Output Data for Curve Fitting';
+ANALYSIS_TO_PERFORM{DIRECTION_TUNING_3D+1} = 'Fit Optic Flow Tuning (Zack)';
+ANALYSIS_TO_PERFORM{DIR3D_VARY_FIXATION+1} = 'Fit Optic Flow Tuning (Zack)';
+ANALYSIS_TO_PERFORM{SURF_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{SLANT_TUNING+1} = 'Plot Tilt Slant Tuning Curves';
+ANALYSIS_TO_PERFORM{SURF_SPEED_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{SURF_DEPTH_TUNING+1} = 'Plot Tuning Curve';
+ANALYSIS_TO_PERFORM{EYE_CALIBRATION+1} = 'Linear Calibration';
+ANALYSIS_TO_PERFORM{STEREOACUITY+1} = 'Plot Microstim';
+
+ANALYSIS_TO_PERFORM{SIM_DIST_DISP_ONLY+1} = 'Fit Gabor';
+ANALYSIS_TO_PERFORM{SIM_DIST_CURVATURE_DISCRIM+1} = 'Plot Psychometric';
+
+BEG_TRIAL = -1;
+END_TRIAL = -1;
+STARTCODE = 4;
+STARTOFFSET = 0;  %****!!! check STARTOFFSET and STOPOFFSET !!! ***
+%STARTOFFSET = 500;
+STOPCODE = 5;
+STOPOFFSET = 0;
+%STOPOFFSET = -500;
+GOODDATA = 1;
+SPIKECHAN = 1;
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\MOOG_cells.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\MOOG_vary_fix.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\Jerry_Surf_Tuning.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\VerticalDisp_Jerry2.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\VerticalDisp_Robbins3.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\RobbinsDirecDiscrim.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\Jerry_Slant_12.14.04.m';
+%BATCH_FILE = 'Z:\Data\Tempo\Batch Files\MOOG_optic_flow_fits_Zebulon2.m';
+BATCH_FILE = 'Z:\Data\Tempo\Batch Files\StereoacuityMicrostimBen.m';
+WRITE_TO_BATCH_FILE = 1;
+%---------------------------------------------------------
+
+% get list of all matching files in this direction.
+% this function returns a structure array including the name and modification date of each file
+disp('reading and sorting directory...');
+dir_listing = dir([PATH FILES2SEARCH]);
+num_files_found = size(dir_listing,1);
+
+if (num_files_found == 0)
+    errordlg('No files found.', 'Search Error');
+    return;
+end
+
+for i=1:num_files_found
+    files{i} = dir_listing(i).name;
+    dates{i} = dir_listing(i).date;
+    date_number(i) = datenum( datevec(dates{i}) );
+end
+
+%sort the datenum array and use this to sort the file list according to creation date
+[y, sortindex] = sort(date_number);
+for i=1:num_files_found
+    sorted_files{i} = files{sortindex(i)};
+    sorted_dates{i} = dates{sortindex(i)};
+end
+
+%now let's go through the list of sorted files, and select some based on 
+%Protocol and possibly other variables as well
+if (WRITE_TO_BATCH_FILE == 1)
+    batch_fid = fopen(BATCH_FILE, 'w');
+    fprintf(batch_fid, '%%PATH FILE Analysis BegTrial EndTrial StartCode StartOffset StopCode StopOffset GoodData SpkChan %%Protocol');
+    fprintf(batch_fid, '\r\n');
+    fclose(batch_fid);
+end
+disp('processing files...');
+for i=1:num_files_found
+    logfile = [PATH sorted_files{i}]
+    
+    selected(i) = 0;    %by default, file is not selected
+    
+    %extract cell # from logfile and check against CELL_RANGE
+    m_loc = find(sorted_files{i} == 'm');
+    c_loc = find(sorted_files{i} == 'c');
+    r_loc = find(sorted_files{i} == 'r');
+    dot_loc = find(sorted_files{i} == '.');
+    %do some checking to make sure logfile name has the expected format
+    if (isempty(m_loc) | isempty(c_loc) | isempty(r_loc))
+        buff = sprintf('ERROR: %s is not a proper TEMPO logfile name', sorted_files{i});
+        disp(buff);
+        continue;
+    end
+    if ( (m_loc(1)>c_loc(1)) | (m_loc(1)>r_loc(1)) | (c_loc(1)>r_loc(1)) )
+        buff = sprintf('ERROR: %s is not a proper TEMPO logfile name', sorted_files{i});
+        disp(buff);
+        continue;
+    end
+    
+    %condition on cell number
+    cell_number(i) = eval(sorted_files{i}(c_loc(1)+1 : r_loc(1)-1));
+    if ( sum(CELL_RANGE == cell_number(i)) > 0 )
+        selected(i) = 1;
+        buff = sprintf('cell number %d is in CELL_RANGE...', cell_number(i));
+        disp(buff);
+    else
+        continue;
+    end
+
+    %condition on run number
+    run_number(i) = eval(sorted_files{i}(r_loc(1)+1 : dot_loc(1)-1));
+    if ( sum(RUN_RANGE == run_number(i)) > 0 )
+        selected(i) = 1;
+        buff = sprintf('run number %d is in RUN_RANGE...', run_number(i));
+        disp(buff);
+    else
+        continue;
+    end
+    
+    %read the first line of the .log file to get the Protocol number
+    %and check this against SELECT_PROTOCOLS
+    [key1, data1] = textread(logfile, '%s %[^\n]',1);
+    if strcmp(key1{1}, 'PROTOCOL')
+        Protocol(i) = sscanf(data1{1},'%f');
+        if ( sum(SELECT_PROTOCOLS == Protocol(i)) > 0 )
+            selected(i) = 1;
+            buff = sprintf('Protocol number %d is in SELECT_PROTOCOLS...', Protocol(i));
+            disp(buff);
+        else
+            continue;
+        end
+    else
+        buff = sprintf('ERROR: Protocol is not defined for %s', logfile);
+        disp(buff);
+        continue;
+    end    
+    
+    % read the .htb header and get some useful info.
+    len = length(sorted_files{i});
+    htb_files{i} = [sorted_files{i}(1:(len-4)) '.htb'];    
+    htb_filename = [PATH htb_files{i}];
+    htb_fid = htbOpen(htb_filename);            % Open the HTB file
+    if (htb_fid == -1)
+        buff = sprintf('ERROR: %s could not be opened', htb_filename);
+        disp(buff);
+        continue;
+    end
+    htb_header{EVENT_DB} = htbGetHd(htb_fid, EVENT_DB);
+    num_trials(i) = htb_header{EVENT_DB}.sweep;
+    
+    %read the .log file and store parameters that can be screened to select files
+    [revcorr_params, dots_params, moog_params, targ_params, misc_params, one_time_params, eye_calib_params, obj_params, bar_params, bkgnd_params, neuron_params] = ReadTEMPOLog(logfile, num_trials);		
+    
+    %if we've gotten this far, the logfile must be selected based on PROTOCOL and CELL_RANGE and RUN_RANGE
+    %now, modify selections based on contents of params and set a flag
+    %---------- ADD YOUR PARAMETER SEARCH CRITERIA HERE -------------------
+    %-------------------------------------------------------------
+    %look for files with two speeds (for finding HDISP_TUNING runs, moving + stationary)
+%    if (Protocol(i) == HDISP_TUNING)
+%        hor_disp = dots_params(DOTS_HDISP,:,PATCH1);
+%        null_trials = logical( (hor_disp == one_time_params(NULL_VALUE)) );
+%        speed = dots_params(DOTS_SPEED,:,PATCH1);
+%        unique_speed = munique(speed(~null_trials)');
+%        if (length(unique_speed) ~= 2)
+%            selected(i) = 0;
+%        end
+%    end
+   if ( (Protocol(i) == DIR3D_VARY_FIXATION) || (Protocol(i) == DIRECTION_TUNING_3D) )
+       stim_type = moog_params(STIM_TYPE,:,MOOG);
+       if (max(stim_type) == 1) %if only a Vestibular condition
+           selected(i) = 0;
+       end
+   end
+    %-------------------------------------------------------------
+    %-------------------------------------------------------------
+    
+    %write out a line to the batch file
+    if (WRITE_TO_BATCH_FILE == 1)
+        if (selected(i) == 1)
+            analysis{i} = ANALYSIS_TO_PERFORM{Protocol(i)+1};
+            batch_fid = fopen(BATCH_FILE, 'a');
+            fprintf(batch_fid, '%s %s ''%s'' %1d %1d %1d %1d %1d %1d %1d %1d %%%s', PATH, htb_files{i}, analysis{i}, BEG_TRIAL, END_TRIAL, STARTCODE, STARTOFFSET, STOPCODE, STOPOFFSET, GOODDATA, SPIKECHAN, protocol_names{Protocol(i)+1});
+            fprintf(batch_fid, '\r\n');
+            fclose(batch_fid);
+        end
+    end
+    
+end

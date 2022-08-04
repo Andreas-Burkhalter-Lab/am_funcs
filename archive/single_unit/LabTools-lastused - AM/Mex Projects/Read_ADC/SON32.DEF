@@ -1,0 +1,87 @@
+; module-definition file for sondll -- used by LINK.EXE
+
+LIBRARY      SON32
+
+DESCRIPTION  'SON filing system as a Windows DLL'
+
+;CODE can be moved in memory and discarded/reloaded
+;CODE  SHARED
+
+;DATA must be MULTIPLE if program can be invoked more than once
+;DATA  SHARED
+
+;HEAPSIZE     4096
+
+; All functions that will be called by any Windows routine MUST be exported
+
+EXPORTS
+        WEP                     @1
+        SONInitFiles            @2
+        SONSetBuffSpace         @3
+        SONGetExtMarkInfo       @4
+        SONChanDivide           @5
+        SONGetFreeChan          @6
+        SONSetChanComment       @7
+        SONSetADCChan           @8
+        SONSetEventChan         @9
+        SONOpenOldFile          @10
+        SONOpenNewFile          @11
+        SONSetMarker            @12
+        SONUpdateStart          @13
+        SONSetFileClock         @14
+        SONGetTimePerADC        @15
+        SONSetFileComment       @16
+        SONGetFileComment       @17
+        SONGetChanComment       @18
+        SONGetChanTitle         @19
+        SONGetIdealLimits       @20
+        SONGetusPerTime         @21
+        SONGetADCInfo           @22
+        SONCloseFile            @23
+        SONWriteEventBlock      @24
+        SONWriteMarkBlock       @25
+        SONWriteADCBlock        @26
+        SONGetEventData         @27
+        SONGetMarkData          @28
+        SONGetADCData           @29
+        SONGetExtraData         @30
+        SONChanDelete           @31
+        SONChanKind             @32
+        SONSetADCMarkChan       @33
+        SONSetRealMarkChan      @34
+        SONSetTextMarkChan      @35
+        SONWriteExtMarkBlock    @36
+        SONGetExtMarkData       @37
+        SONCommitFile           @38
+        SONRead                 @39
+        SONWrite                @40
+        SONGetBlock             @41
+        SONGetPred              @42
+        SONGetSucc              @43
+        SONSetSucc              @44
+        SONFindBlock            @45
+        SONReadBlock            @46
+        SONWriteBlock           @47
+        SONChanPnt              @48
+        SONItemSize             @49
+        SONSetInitLow           @50
+        SONChanMaxTime          @51
+        SONMaxTime              @52
+        SONIntlChanMaxTime      @53
+        SONIntlMaxTime          @54
+        SONUpdateMaxTimes       @55
+        SONLastTime             @56
+        SONEmptyFile            @57
+        SONExtendMaxTime        @58
+        SONGetFirstData         @59
+        SONFileHandle           @60
+        SONFilter               @61
+        SONFControl             @62
+        SONFEqual               @63
+        SONSetChanTitle         @64
+        SONSetADCUnits          @65
+        SONSetADCOffset         @66
+        SONSetADCScale          @67
+        SONCanWrite             @68
+        SONGetExtraDataSize     @69
+        SONGetVersion           @70

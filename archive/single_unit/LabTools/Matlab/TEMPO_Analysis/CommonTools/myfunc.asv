@@ -1,0 +1,7 @@
+hold on;
+x = 1:0.1:100;
+for i = 1:length(x)
+    y(i) = log(x(i)) ./ (x(i));
+end
+
+plot(x,y,'r.')

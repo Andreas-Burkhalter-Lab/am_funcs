@@ -1,0 +1,51 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Read_ADC - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x409 /fo"Debug/mexversion.res" /i "F:\Winapps2\Matlab\extern\include" /d "_DEBUG" /d "_AFXDLL" "F:\Winapps2\Matlab\extern\include\mexversion.rc"" 
+Creating temporary file "C:\TEMP\RSP95F.tmp" with contents
+[
+/nologo /MD /W3 /Gm /GX /ZI /Od /I "C:\matlabR12\extern\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /D "IBMPC" /D "MSVC" /D "MSWIND" /D "__STDC__" /D "MATLAB_MEX_FILE" /D "NDEBUG" /Fp"Debug/Read_ADC.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"Z:\LabTools\Mex Projects\Read_ADC\main.c"
+]
+Creating command line "cl.exe @C:\TEMP\RSP95F.tmp" 
+Creating temporary file "C:\TEMP\RSP960.tmp" with contents
+[
+kernel32.lib user32.lib libmx.lib libmex.lib libmatlbmx.lib libmat.lib son32.lib /nologo /subsystem:windows /dll /incremental:yes /pdb:"Read_ADC.pdb" /debug /machine:I386 /out:"Read_ADC.dll" /implib:"Read_ADC.lib" /pdbtype:sept /libpath:"C:\matlabR12\extern\lib\win32\microsoft\msvc60" /export:mexFunction 
+".\Debug\main.obj"
+".\Debug\mexversion.res"
+]
+Creating command line "link.exe @C:\TEMP\RSP960.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+main.c
+z:\labtools\mex projects\read_adc\main.c(178) : warning C4133: 'function' : incompatible types - from 'double *' to 'int *'
+z:\labtools\mex projects\read_adc\main.c(43) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(43) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(48) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(48) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(53) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(53) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(93) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(93) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(98) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(98) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(108) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(108) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(183) : warning C4761: integral size mismatch in argument; conversion supplied
+z:\labtools\mex projects\read_adc\main.c(178) : warning C4700: local variable 'MaxTime' used without having been initialized
+Linking...
+   Creating library Read_ADC.lib and object Read_ADC.exp
+
+
+
+<h3>Results</h3>
+Read_ADC.dll - 0 error(s), 15 warning(s)
+</pre>
+</body>
+</html>

@@ -1,0 +1,126 @@
+%Edited on 04/06/07 by CMA to determine stimulus onset time at optimal
+%spatial frequency
+
+function Stimulus_Onset(data, SpikeChan, StartCode, StopCode, BegTrial, EndTrial, StartOffset, StopOffset, StartEventBin, StopEventBin, PATH, FILE, Protocol);
+line_types = ['b-'; 'r-'; 'g-'; 'k-'; 'g-'; 'g-'; 'g-'; 'g-'];
+Tempo_Defs;
+ProtocolDefs;
+TEMPO_Defs;		%needed for defines like IN_T1_WIN_CD
+ProtocolDefs;	%needed for all protocol specific functions - contains keywords - BJP 1/4/01
+Path_Defs;
+
+symbols = {'ko' 'k*' 'go' 'mo' 'b*' 'r*' 'g*' 'c*'};
+lines = {'k-' 'm-' 'g-' 'b-' 'b--' 'r--' 'g--' 'c--'};
+colors = {'k.' 'b.'};
+
+%get the column of values of SFs in gratings_params matrix
+sf = data.gratings_params(GRAT_SPATIAL_FREQ,:,PATCH1);
+
+%get indices of any NULL conditions (for measuring spontaneous activity)
+null_trials = logical( (sf == data.one_time_params(NULL_VALUE)) );
+
+%get the column of stimulus type values
+stim_type = data.gratings_params(GRAT_TYPE,:,PATCH1);
+unique_stim_type = munique(stim_type(~null_trials)');
+
+%now, get the firing rates for all the trials
+spike_rates = data.spike_rates(SpikeChan, :);
+
+unique_sf = munique(sf(~null_trials)');
+
+%now, remove trials that do not fall between BegTrial and EndTrial
+trials = 1:length(sf);		% a vector of trial indices
+select_trials = ( (trials >= BegTrial) & (trials <= EndTrial) );
+
+%now, get the firing rate for NULL condition trials
+null_resp = data.spike_rates(SpikeChan, null_trials & select_trials);
+null_rate = mean(null_resp);
+
+plots_on = 0;
+
+total_spikes1 = [];
+total_spikes2 = [];
+
+data
+%%%%%%find(data.event_data(1,:,trialnumber)==4) will give Stim_Start
+
+
+
+%subplot(2, 1, 2);    
+for j = 1:length(unique_stim_type);
+    count=1;
+    grating_select = logical( (stim_type == unique_stim_type(j)) );
+    
+    plot_x=sf(~null_trials & select_trials & grating_select);
+    plot_y=spike_rates(~null_trials & select_trials & grating_select);
+
+    %NOTE:  Inputs to PlotTuningCurve.m must be column vectors, not row vectors
+    %because of munique().
+    [px, py, perr] = PlotTuningCurve(plot_x', plot_y', symbols{j}, lines{j}, 1, 0);
+    %NOTE: last argument=0 means just get output, no plot
+    
+    %py is the response and px is the stimulus value.  We are interested in
+    %the cell's response at optimized conditions, therefore, we find the
+    %max of py, and select the corresponding px as stimulus value that
+    %results in optimized response.
+    [max_response, index] = max(py);
+    optimized_stimulus = px(index);
+
+ 
+    hold on
+    for trial=1:length(sf);
+        if (sf(trial) == optimized_stimulus & stim_type(trial) == unique_stim_type(j));
+            count = count+1;
+            spikes =  find(data.spike_data(SpikeChan,(StartEventBin(trial) + StartOffset - 500):(StopEventBin(trial) + StopOffset + 500),trial) == 1);
+            spikes =  find(data.spike_data(SpikeChan,(StartEventBin(trial) + StartOffset - 500):(StopEventBin(trial) + StopOffset + 500),trial) == 1);
+            %NOTE: We will want to look at StartEventBin values
+            
+            %plot (spikes/1000,count*ones(1,length(spikes)),colors{j});
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Might need to change this section
+            if j == 1;
+                total_spikes1 = cat(2,total_spikes1,spikes);
+            elseif j == 2;
+                total_spikes2 = cat(2,total_spikes2,spikes);
+            else
+                'Error: More than two grating types'
+            end
+            %[p,h] = ranksum(x,y,0.05) h = 1 means reject null hypothesis
+            %that the medains are the same
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        end
+    end
+    
+    num_of_trials(j) = count-1;
+    
+end
+
+%The following variables will be needed to determine the stimulus onset
+%time
+total_spikes1;
+total_spikes2;
+null_rate;
+num_of_trials;
+
+% Use about a 20 ms window.  The window will be slid across the entire time
+% duration of the stimulus to see when the number of spikes exceeds what 
+% should be expected from the null trials.  Since there are several trials
+% being collapsed and examined all at once, the null rate must be multiplied
+% by the variable num_of_trials, which is a measure of how many trials are 
+% being considered at once.  As a starting basis for comparison, stimulus 
+% onset can be regarded as the time that the cell's activity is more than 
+% three times what should be expected from the null trials.
+
+return;
+
+
+
+
+
+
+
+
+
+
+
