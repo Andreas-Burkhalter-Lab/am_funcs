@@ -1,0 +1,80 @@
+This directory contains routines useful for density estimation.  They
+perform the computations described in the following paper:
+
+   T. E. Holy (2006). "Multidimensional nonparametric density
+estimation and error analysis by penalized likelihood." Some journal,
+vol: pages.
+
+The following functions are ones that you might want to call directly
+(see each function for detailed help):
+  mpl: Given a set of data points x (can be multidimensional) and a
+       projection matrix W (specifies the smoothing length scales),
+       calculate the maximum likelihood density.  This is the most
+       basic task.
+       In d=1, this is an O(N) algorithm. In d > 1, this is an O(N^2)
+       algorithm.
+       As described in the paper, the continuous problem can be
+       reduced to a discrete problem on the (nonuniform) grid of
+       points x.  This routine is the only one set up to calculate the
+       density at arbitrary points, so you may well need to call this one 
+       after calling some of the "higher level" routines below.
+  mpl_optw: Given a set of data points x, find the optimal choice for
+       W, using cross-validation.
+       In principle, this is of O(d^2*N^2) for d>1 (and still of O(N)
+       for d=1). However, for modest d the overhead dominates, and so
+       you'll see behavior closer to O(d*N^2) until d becomes large.
+       As described below, once d becomes large you may need to do
+       dimensionality reduction anyway, using either projpurscg
+       (below) or any of a host of other dimensionality reduction
+       techniques.
+       While cross-validation is relatively robust, there are cases
+       where it can run into trouble. Specifically, the estimate can
+       be "distorted" when either (1) single points are very far from
+       others, or (2) when some points are unusually close. When these
+       happen, you may benefit from pre-processing your data to
+       eliminate the problematic points. Note for case (2) that you
+       can still preserve those points as useful data by adjusting the
+       multiplicity assigned to each point. The function "uniquemult"
+       in this directory can automate this latter case for you.
+  projpurscg: When the dimensionality is large, no useful estimate of
+       the density can be formed without enormous quantities of data.
+       However, one can project the data to a space of smaller dimension
+       and estimate the density there. This function identifies useful
+       directions for projecting the data as those which maximize the
+       negentropy (see paper). It thus implements "projection pursuit,"
+       a generalization of ICA.
+       When projecting down to d=1 (or when making sequential 1d
+       projections), the O(N) algorithm is used, making the overall
+       optimization something between O(d*N) and O(d^2*N) for each
+       single component. The algorithm is thus competitive with ICA,
+       without having to make some of the ad-hoc assumptions of ICA
+       (in the choice of a "contrast function"). In practice, I find
+       that the largest benefits occur in applications in which
+       clustering is a prominent feature of the data.
+       In contrast with most implementations of projection pursuit,
+       this routine also allows you to do PP on true multidimensional
+       projections. However, in this case you are forced to use the
+       O(N^2) algorithm; hence, it will be much slower, and probably
+       practical for only modest d and N.
+  avgchi2: Compute <\chi^2>. Set your w by some means (e.g., PPEK or
+       mpl_optw).  Then, using that w, project your points and call
+       mpl, and make sure you ask for the im ("intermediates") output.
+       Then pass the appropriate parameters to avgchi2.
+  negentropy: Useful if you want to evaluate the quality of
+       projections.  Note that for PPEK, projpurscg can return this
+       value, so you may only need this for comparison with other
+       methods.
+       
+Finally, note that for d>1, very large data sets can still be handled
+approximately using a "landmark" approach. Choose a set of landmarks
+(say, a random selection of 1000 data points), and then in the full
+data set assign each point to its closest landmark. Set the
+multiplicity (n) of each landmark to reflect these assignments. Then
+call the routines above on the landmarks and their multiplicities. If
+you need to calculate the density at each point in the original sample,
+the function "mpl" can do this for you in O(Nlandmarks * N) time,
+making this still practical. In making the assignment between data
+points and landmarks, the function "sqrdist" can help with the
+process of calculating pairwise distances.
+
+Examples:

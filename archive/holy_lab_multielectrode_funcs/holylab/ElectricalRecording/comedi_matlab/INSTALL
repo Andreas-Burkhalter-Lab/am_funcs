@@ -1,0 +1,21 @@
+To install the comedi_matlab bindings, carry out the following steps:
+
+1. Move this directory to the place you want to keep these MEX files;
+update the MATLAB path if necessary.
+
+2. Edit Config to set parameters for your system: in particular, the
+MATLAB home directory and the location you wish to use to install the
+library.
+
+3. make lib
+
+4. make lib_install (must be done as root)
+
+5. make clean; make allmex 
+(Note: many functions depend on commat_util.c, yet for some reason I
+can't figure out how to get make to recompile this file when it
+changes.  I recommend a make clean; make allmex to make sure that
+commat_util is updated properly.  Any suggestions for fixing this
+behavior are welcome.)
+
+Submit patches/report bugs to Tim Holy at holy@pcg.wustl.edu.

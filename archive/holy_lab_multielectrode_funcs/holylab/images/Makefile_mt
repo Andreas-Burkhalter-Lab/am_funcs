@@ -1,0 +1,7 @@
+UTILITYDIR = $(MATLABFUNCDIR)/Utilities
+MATOPSDIR = $(MATLABINSTALLDIR)/bin
+CFLAGS = -g -O -DMAIN -I$(UTILITYDIR) -I/usr/include/valgrind
+
+all: imqinterp_mt.cpp image_utilities.cpp image_utilities.h $(UTILITYDIR)/mat_variables.c $(UTILITYDIR)/mat_variables.h
+	mex -I$(UTILITYDIR) imqinterp_mt.cpp image_utilities.cpp $(UTILITYDIR)/timer_g.c
+	mex -f $(MATOPSDIR)/matopts.sh $(CFLAGS) imqinterp_mt.cpp image_utilities.cpp $(UTILITYDIR)/mat_variables.c $(UTILITYDIR)/timer_g.c -o imqinterp_mt

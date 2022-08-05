@@ -1,0 +1,55 @@
+MexNC 
+
+MexNC is an interface between MATLAB and NetCDF files.  What's provided
+here is the C code for building the mexnc mex-file on your platform as
+well as several helper routines and wrappers.  The 2.0.x release is
+known to be compatible with NetCDF versions 3.6.2 and below.
+
+
+NETCDF TOOLBOX
+=======================================================================
+The Netcdf Toolbox is not part of this download.  Go check 
+http://mexcdf.sourceforge.net for it.
+
+
+Standard Install Instructions:
+========================================================================
+If your download already contains a mex-file and if you don't use 
+windows, you may already be set.  Just add the path to this directory 
+to your matlab path and give it a go.  If you need to compile the mex-
+file, read down below in the section "Compiling Your Own".  But first,
+some platform-specific notes for windows users.
+
+
+Compiling your Own:
+========================================================================
+    You shouldn't have to do this unless a mex-file for your platform
+    is not already present in the private directory.  If you do wish
+    to compile your own version, look in the src directory.
+
+    If you are running 32-bit windows, then in the win32 directory is 
+    a file called netcdf.dll.  You will need this in to be placed onto
+    your system path in order for the mex-file to work.  It's easiest
+    if you just install it into ${MATLABROOT}/bin/win32 but you can 
+    choose another location if you take these additional steps.
+
+    On windows XP, you can find and set your system path like so...
+
+        Start => Settings => Control Panel => System => Advanced =>
+        Environment Variables => System Variables
+
+    Then select PATH, and either edit it to include the path to the 
+    netcdf.dll file, or put the netcdf.dll file somewhere on that path.
+    You should then reboot.
+
+    You should remove any old version of the netcdf.dll.
+
+
+
+OPeNDAP
+=======================================================================
+If you wish to use an opendap-enabled version of mexnc, then you have to
+compile it yourself.  Take a look at the online notes at 
+http://mexcdf.sourceforge.net/opendap/ for further details.
+
+

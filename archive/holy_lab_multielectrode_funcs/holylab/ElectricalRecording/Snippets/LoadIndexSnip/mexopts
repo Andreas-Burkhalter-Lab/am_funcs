@@ -1,0 +1,48 @@
+% METROWERKS
+% The preceding line is a signature line, and it informs mex.m whether this is an MPW
+% script or an M-script.  All Macintosh MEX options files need to begin with either
+% "# MPW" or "% METROWERKS"
+
+% SETUP Metrowerks_CodeWarrior_Pro_C Metrowerks CWPRO C
+
+% $Revision$
+
+if isempty(PLATFORM)
+	arch = gestalt('sysa');
+	if arch(32)
+		PLATFORM = '68k';
+	else
+		PLATFORM = 'powerpc';
+	end
+end
+
+if isempty(MATLAB)
+	MATLAB 		= [matlabroot ':'];
+end
+
+BUILDSCRIPT = 'CWPRO_CMEX.script';
+COMPILER 	= 'CodeWarrior C';
+ENV 		= 'Metrowerks Pro';
+DEFPREFIX 	= 'CodeWarrior.MEX.prefix';
+NAMESCRIPT	= 'get_CW_name'; 
+
+if strcmp(PLATFORM, 'powerpc')
+    COMPFLAGS       = '';
+    LINKFLAGS       = '';
+    OPTIMFLAGS      = ['Instruction Scheduling:PowerPC601, ' ...
+                       'Peephole Optimizer: true, ' ...
+                       'Global Optimization: true, ' ...
+                       'Optimization Level: 3'];
+    DEBUGFLAGS      = ['Generate SYM File: true, ' ...
+                       'Full Path In Sym Files: true'];
+end
+
+if strcmp(PLATFORM, '68k')
+    COMPFLAGS       = '';
+    LINKFLAGS       = '';
+    OPTIMFLAGS      = 'CSE Optimizer: true, Peephole Optimizer: true';
+    DEBUGFLAGS      = ['Generate SYM File: true, ' ...
+                       'Full Path In Sym Files: true'];
+end
+
+SRCFILES = {[MATLAB 'extern:include:mxVR.r']};

@@ -1,0 +1,8 @@
+MATLABDIR= /usr/local/matlab
+PLATFORM= glnx86
+MEXHDIR= $(MATLABDIR)/extern/include
+INSTALLDIR_LIB= $(MATLABDIR)/extern/lib/$(PLATFORM)
+INSTALLDIR_LIBH= $(MEXHDIR)
+CC = g++
+LD = ld
+CFLAGS = -Wall -Wstrict-prototypes

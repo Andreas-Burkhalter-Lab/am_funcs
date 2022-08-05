@@ -1,0 +1,296 @@
++ glucur = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='+glucuronidase'
++ sulf = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='+sulfatase'
++pronase = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='+pronase'
++sulf = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='+sulfatase'
+- glucur = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='-glucuronidase'
+- pronase = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='-pronase'
+- sulf = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='-sulfatase'
+0to20min = stim=stimdefault_ud_francesco('WAX'); stim.procedure{end+1}='HPLC 0to20min'
+116to130min = stim=stimdefault_ud_francesco('WAX'); stim.procedure{end+1}='HPLC 116to130min'
+1d 100%meoh = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='1d 100%meoh'
+1d 5%meoh = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='1d 5%meoh'
+1to20min = stim=stimdefault_ud_francesco('WAX'); stim.procedure{end+1}='HPLC 1to20min'
+2,5 -10 = stim=stimdefault_syn_francesco; stim.identity='2,5-dimethylpyrazine'; stim.concentration=1e-10
+2,5 -6 = stim=stimdefault_syn_francesco; stim.identity='2,5-dimethylpyrazine'; stim.concentration=1e-6
+2,5 -8 = stim=stimdefault_syn_francesco; stim.identity='2,5-dimethylpyrazine'; stim.concentration=1e-8
+2,5-dimethylpyrazine = stim=stimdefault_syn_francesco; stim.identity='2,5-dimethylpyrazine'
+2,5-dimethylpyrazine -12 = stim=stimdefault_syn_francesco; stim.identity='2,5-dimethylpyrazine'; stim.concentration=1e-12
+2-heptanone = stim=stimdefault_syn_francesco; stim.identity='2-heptanone'
+2-heptanone -12 = stim=stimdefault_syn_francesco; stim.identity='2-heptanone'; stim.concentration=1e-12
+2.58 = stim.identity='2.58'
+2d 100%meoh = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='2d 100%meoh'
+2d 5%meoh-ac = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='2d 5%meoh-ac'
+2d 5%meoh-bas = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='2d 5%meoh-bas'
+2d 65%meoh-ac = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='2d 65%meoh-ac'
+2d 65%meoh-bas = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='2d 65%meoh-bas'
+2h -10 = stim=stimdefault_syn_francesco; stim.identity='2-heptanone'; stim.concentration=1e-10
+2h -6 = stim=stimdefault_syn_francesco; stim.identity='2-heptanone'; stim.concentration=1e-6
+2h -8 = stim=stimdefault_syn_francesco; stim.identity='2-heptanone'; stim.concentration=1e-8
+2nd filt u = stim=stimdefault_ud_francesco('filtered'); stim.user_tag = '2'
+2nd_filt u = stim=stimdefault_ud_francesco('filtered'); stim.user_tag = '2'
+50-70meoh = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'
+50_70num1 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '1'
+50_70num10 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '10'
+50_70num2 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '2'
+50_70num3 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '3'
+50_70num4 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '4'
+50_70num5 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '5'
+50_70num6 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '6'
+50_70num7 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '7'
+50_70num8 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '8'
+50_70num9 = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='HPLC 50-70meoh'; stim.user_tag = '9'
+50mm kcl = stim.category='K'; stim.concentration=50; stim.conc_unit='mM';
+71to120min = stim=stimdefault_ud_francesco('WAX'); stim.procedure{end+1}='HPLC 71to120min'
+a0225 = stim=stimdefault_syn_francesco; stim.identity='A0225'
+a2398 = stim=stimdefault_syn_francesco; stim.identity='A2398'
+a2460 = stim=stimdefault_syn_francesco; stim.identity='A2460'
+a2534 = stim=stimdefault_syn_francesco; stim.identity='A2534'
+a6940 = stim=stimdefault_syn_francesco; stim.identity='A6940'
+a7010 = stim=stimdefault_syn_francesco; stim.identity='A7010'
+a7864 = stim=stimdefault_syn_francesco; stim.identity='A7864'
+a8530 = stim=stimdefault_syn_francesco; stim.identity='A8530'
+aapd = stim.category='peptide'; stim.identity='AAPDNRETF'
+ac 20 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 20'
+ac 35 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 35'
+ac 5 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 5'
+ac 50 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 50'
+ac 65 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 65'
+ac 80 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 80'
+ac 93 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac 93'
+ac acid = stim=stimdefault_syn_francesco; stim.identity='ac acid'
+ac-100 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac-100'
+ac-30 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac-30'
+ac-5 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac-5'
+ac-65 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac-65'
+ac-96 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='ac-96'
+achmw = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='achmw'
+aclmw = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='aclmw'
+ag1 el = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 elution'
+ag1 elution = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 elution'
+ag1 fl = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 wash'
+ag1 fl buffered = stim=stimdefault_ud_francesco('ODS'); stim.procedure(end+1:end+2)={'AG1 wash','+buffered'};
+ag1 fl not buffered = stim=stimdefault_ud_francesco('ODS'); stim.procedure(end+1:end+2)={'AG1 wash','-buffered'};
+ag1 fl th w = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 wash'
+ag1 flow through = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 wash'
+ag1 wash = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG1 wash'
+ag50 el = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 elution'
+ag50 elution = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 elution'
+ag50 fl = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 wash'
+ag50 fl th w = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 wash'
+ag50 flow through = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 wash'
+ag50 wash = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1}='AG50 wash'
+ag50ag1 = stim=stimdefault_ud_francesco('ODS'); stim.procedure(end+1:end+2)={'AG50 wash','AG1 elution'}
+anestr = stim.identity='anestr'
+arg = stim=stimdefault_syn_francesco; stim.identity='arginine'
+arg 10 _4 = stim=stimdefault_syn_francesco; stim.identity='arginine'; stim.concentration=0.1; stim.conc_unit='mM'
+aubepine = stim=stimdefault_syn_francesco; stim.identity='aubepine'
+b-farnesene = stim=stimdefault_syn_francesco; stim.identity='b-farnesene'
+balb f = stim=stimdefault_ud_francesco('raw'); stim.category='urine_whole'
+balbf = stim=stimdefault_ud_francesco('raw'); stim.category='urine_whole'
+balb f 100 = stim=stimdefault_ud_francesco('raw'); stim.category='urine_whole'; stim.concentration = 0.01
+balb f filt = stim=stimdefault_ud_francesco('filtered')
+balb f filt u = stim=stimdefault_ud_francesco('filtered')
+balb m = stim=stimdefault_ud_francesco('raw'); stim.sex='M'
+balb mf = stim=stimdefault_ud_francesco('raw'); stim.sex='M+F'
+bas 20 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 20'
+bas 35 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 35'
+bas 5% meoh = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 5'
+bas 50 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 50'
+bas 65 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 65'
+bas 80 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 80'
+bas 93 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 93'
+bas-100 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 100'
+bas-30 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas-30'
+bas-5 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas-5'
+bas-65 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 65'
+bas-96 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bas 96'
+bashmw = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='bashmw'
+baslmw = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='baslmw'
+boiled balb f = stim=stimdefault_ud_francesco('raw'); stim.procedure{end+1} = 'boiled'
+boiled u = stim=stimdefault_ud_francesco('raw'); stim.procedure{end+1} = 'boiled'
+borneol = stim=stimdefault_syn_francesco; stim.identity='borneol'
+buffer = stim.category='negative_control'
+butanone = stim=stimdefault_syn_francesco; stim.identity='butanone'
+butyric = stim=stimdefault_syn_francesco; stim.identity='butyric'
+butyrophenone = stim=stimdefault_syn_francesco; stim.identity='butyrophenone'
+c18 = stim=stimdefault_ud_francesco('ODS')
+c18 1 = stim=stimdefault_ud_francesco('ODS'); stim.user_tag = '1'
+c18 1.38x = stim=stimdefault_ud_francesco('ODS');stim.concentration=1.38; stim.conc_unit='relative'
+c18 100% = stim=stimdefault_ud_francesco('ODS')
+c18 40% = stim=stimdefault_ud_francesco('ODS')
+c18 el = stim=stimdefault_ud_francesco('ODS')
+c18 fl = stim=stimdefault_ud_francesco('filtered'); stim.procedure(end+1:end+2) = {'meth/chlor meth','C18 wash'};
+c18wax = stim=stimdefault_ud_francesco('WAX')
+c18wax fl = stim=stimdefault_ud_francesco('ODS'); stim.procedure{end+1} = 'WAX wash'
+c4385 = stim=stimdefault_syn_francesco; stim.identity='C4385'
+c5075 = stim=stimdefault_syn_francesco; stim.identity='C5075'
+c6905 = stim=stimdefault_syn_francesco; stim.identity='C6905'
+chl = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1} = 'meth/chlor chlor';
+chloroform = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1} = 'meth/chlor chlor';
+col1 citrate 0.5m 50% meoh = stim.identity='col1 citrate 0.5m 50% meoh'
+col1 citrate 1m = stim.identity='col1 citrate 1m'
+col1 nacl 1 m 50% meoh = stim.identity='col1 nacl 1 m 50% meoh'
+col2 nacl 1m = stim.identity='col2 nacl 1m'
+col2 nacl 1m 50% meoh = stim.identity='col2 nacl 1m 50% meoh'
+crtst = stim=stimdefault_syn_francesco; stim.identity='cort21S'
+dba f = stim=stimdefault_ud_francesco('raw'); stim.strain='DBA'; stim.sex='F'
+dba m = stim=stimdefault_ud_francesco('raw'); stim.strain='DBA'; stim.sex='M'
+dimethyl disulfide = stim=stimdefault_syn_francesco; stim.identity='dimethyl disulfide'
+dmso .124+ st 8 microm +u/300 = stim.identity='dmso .124+ st 8 microm +u/300'
+dmso 0.0124% = stim.identity='dmso 0.0124%'
+dmso.0124 + st .8 microm +u/100 = stim.identity='dmso.0124 + st .8 microm +u/100'
+dmso.0124 +st .8 microm = stim.identity='dmso.0124 +st .8 microm'
+dmso.0124+ st .8 microm +u/300 = stim.identity='dmso.0124+ st .8 microm +u/300'
+dmso.0124+u/100 = stim.identity='dmso.0124+u/100'
+dmso.124 = stim.identity='dmso.124'
+dmso.124+ st 8 microm +u/100 = stim.identity='dmso.124+ st 8 microm +u/100'
+dmso.124+st 8 microm = stim.identity='dmso.124+st 8 microm'
+dmso.124+u/100 = stim.identity='dmso.124+u/100'
+dmso.124+u/300 = stim.identity='dmso.124+u/300'
+e0588 = stim=stimdefault_syn_francesco; stim.identity='E0588'
+e0893 = stim=stimdefault_syn_francesco; stim.identity='E0893'
+e1050 = stim=stimdefault_syn_francesco; stim.identity='E1050'
+e1100 = stim=stimdefault_syn_francesco; stim.identity='E1100'
+e1103 = stim=stimdefault_syn_francesco; stim.identity='E1103'
+e2335 = stim=stimdefault_syn_francesco; stim.identity='E2335'
+e2732 = stim=stimdefault_syn_francesco; stim.identity='E2732'
+e4105 = stim=stimdefault_syn_francesco; stim.identity='E4105'
+eearsm = stim.category='peptide'; stim.identity='EEARSM'
+esp11 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='esp11'
+esp6 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='esp6'
+estr = stim.identity='estr'
+ethyl acetate = stim=stimdefault_syn_francesco; stim.identity='ethyl acetate'
+ethyl propionate = stim=stimdefault_syn_francesco; stim.identity='ethyl propionate'
+ethyl vanilline = stim=stimdefault_syn_francesco; stim.identity='ethyl vanilline'
+eucalyptol = stim=stimdefault_syn_francesco; stim.identity='eucalyptol'
+evap = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='evaporated'
+farnesene = stim=stimdefault_syn_francesco; stim.identity='farnesene'
+fenchone = stim=stimdefault_syn_francesco; stim.identity='fenchone'
+filt = stim=stimdefault_ud_francesco('filtered')
+filt u = stim=stimdefault_ud_francesco('filtered')
+flowthr = stim.identity='flowthr'
+helional = stim=stimdefault_syn_francesco; stim.identity='helional'
+hfi = stim=stimdefault_ud_francesco('filtered'); stim.procedure(end+1) = {'C18 wash'}
+hfo = stim=stimdefault_ud_francesco('filtered'); stim.procedure(end+1) = {'C18 elution'}'
+hmw = stim=stimdefault_ud_francesco('bligh'); stim.procedure{end+1}='desalt 5k hmw'
+hplc = stim=stimdefault_ud_francesco('WAX');
+hplc sample = stim=stimdefault_ud_francesco('WAX');
+hplcsample = stim=stimdefault_ud_francesco('WAX');
+human = stim=stimdefault_ud_francesco('filtered'); stim.strain='human'
+indole = stim=stimdefault_syn_francesco; stim.identity='indole'
+interface = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='meth/chlor interface'
+iso -10 = stim=stimdefault_syn_francesco; stim.identity='isobutylamine'; stim.concentration=1e-10
+iso -6 = stim=stimdefault_syn_francesco; stim.identity='isobutylamine'; stim.concentration=1e-6'
+iso -8 = stim=stimdefault_syn_francesco; stim.identity='isobutylamine'; stim.concentration=1e-8'
+isoborneol = stim=stimdefault_syn_francesco; stim.identity='isoborneol'
+isobutylamine = stim=stimdefault_syn_francesco; stim.identity='isobutylamine'
+isobutylamine -12 = stim=stimdefault_syn_francesco; stim.identity='isobutylamine'; stim.concentration=1e-12
+isobutyric = stim=stimdefault_syn_francesco; stim.identity='isobutyric'
+isovaleric = stim=stimdefault_syn_francesco; stim.identity='isovaleric'
+kcl = stim=stimdefault_syn_francesco; stim.category='K'; stim.conc_unit='mM'; stim.concentration=50
+kcl 50 mm = stim=stimdefault_syn_francesco; stim.category='K'; stim.conc_unit='mM'; stim.concentration=50
+kcl 50mm = stim=stimdefault_syn_francesco; stim.category='K'; stim.conc_unit='mM'; stim.concentration=50
+kcl50mm = stim=stimdefault_syn_francesco; stim.category='K'; stim.conc_unit='mM'; stim.concentration=50
+high k = stim=stimdefault_syn_francesco; stim.category='K'; stim.conc_unit='mM'; stim.concentration=50
+lmw = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='desalt 5k lmw'
+lmw+c18 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution'}
+lmw+c18 ac/100 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution ac/100'}
+lmw+c18 ac/300 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution ac/300'}
+lmw+c18 bas/100 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution bas/100'}
+lmw+c18 bas/300 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution bas/300'}
+lmw+c18/100 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution'}; stim.concentration=0.01
+lmw+c18/1000 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution'}; stim.concentration=0.001
+lmw+c18/300 = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1:end+2}={'desalt 5k lmw','C18 elution'}; stim.concentration=1/300
+male = stim=stimdefault_ud_francesco('filtered'); stim.sex='M'
+meoh = stim=stimdefault_syn_francesco; stim.category='negative_control'; stim.identity='MeOH'; stim.concentration=1e-3;
+met = stim=stimdefault_syn_francesco; stim.identity='methionine'
+methanol = stim=stimdefault_syn_francesco; stim.category='negative_control'; stim.identity='MeOH'; stim.concentration=1e-3;
+msg = stim=stimdefault_syn_francesco; stim.identity='glutamate'
+msg -10 = stim=stimdefault_syn_francesco; stim.identity='glutamate'; stim.concentration=1e-10
+msg -12 = stim=stimdefault_syn_francesco; stim.identity='glutamate'; stim.concentration=1e-12
+msg -6 = stim=stimdefault_syn_francesco; stim.identity='glutamate'; stim.concentration=1e-6
+msg -8 = stim=stimdefault_syn_francesco; stim.identity='glutamate'; stim.concentration=1e-8
+muscone = stim=stimdefault_syn_francesco; stim.identity='muscone'
+n-100 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='n 100'
+n-30 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='n 30'
+n-5 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='n 5'
+n-65 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='n 65'
+n-96 = stim=stimdefault_ud_francesco('filtered');stim.procedure{end+1}='n 96'
+p-cresol = stim=stimdefault_syn_francesco; stim.identity='p-cresol'
+p2135 = stim=stimdefault_syn_francesco; stim.identity='P2135'
+p3817 = stim=stimdefault_syn_francesco; stim.identity='P3817'
+p3865 = stim=stimdefault_syn_francesco; stim.identity='P3865'
+p8168 = stim=stimdefault_syn_francesco; stim.identity='P8168'
+p8200 = stim=stimdefault_syn_francesco; stim.identity='P8200'
+pa -10 = stim=stimdefault_syn_francesco; stim.identity='pentyl acetate'; stim.concentration=1e-10'
+pa -6 = stim=stimdefault_syn_francesco; stim.identity='pentyl acetate'; stim.concentration=1e-6'
+pa -8 = stim=stimdefault_syn_francesco; stim.identity='pentyl acetate'; stim.concentration=1e-8'
+patchone = stim=stimdefault_syn_francesco; stim.identity='patchone'
+pbs 6.51 = stim.category='negative_control'
+pbs 7.4 = stim.category='negative_control'
+pentyl acetate = stim=stimdefault_syn_francesco; stim.identity='pentyl acetate'
+pentyl acetate -12 = stim=stimdefault_syn_francesco; stim.identity='pentyl acetate'; stim.concentration=1e-12'
+pep1 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='pep1'
+pep2 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='pep2'
+pep3 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='pep3'
+pep4 = stim=stimdefault_syn_francesco; stim.category='peptide'; stim.identity='pep4'
+pepaa-10 = stim.identity='AAPDNRETF'; stim.category='peptide'; stim.concentration=1e-10
+pepaa-12 = stim.identity='AAPDNRETF'; stim.category='peptide'; stim.concentration=1e-12
+pepaa-14 = stim.identity='AAPDNRETF'; stim.category='peptide'; stim.concentration=1e-14
+pepaa-8 = stim.identity='AAPDNRETF'; stim.category='peptide'; stim.concentration=1e-8
+pepsy-10 = stim.identity='SYFPEITHI'; stim.category='peptide'; stim.concentration=1e-10
+pepsy-12 = stim.identity='SYFPEITHI'; stim.category='peptide'; stim.concentration=1e-12
+pepsy-14 = stim.identity='SYFPEITHI'; stim.category='peptide'; stim.concentration=1e-14
+pepsy-8 = stim.identity='SYFPEITHI'; stim.category='peptide'; stim.concentration=1e-8
+phenafleur = stim=stimdefault_syn_francesco; stim.identity='phenafleur'
+propionic = stim=stimdefault_syn_francesco; stim.identity='propionic acid'
+proteins = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='meth/chlor interface'
+q1570 = stim=stimdefault_syn_francesco; stim.identity='cort21S'
+q1570 100fm = stim=stimdefault_syn_francesco; stim.identity='cort21S'; stim.concentration = 0.1; stim.conc_unit = 'pM'
+q1890 = stim=stimdefault_syn_francesco; stim.identity='Q1890'
+q2525 = stim=stimdefault_syn_francesco; stim.identity='Q2525'
+q3383 = stim=stimdefault_syn_francesco; stim.identity='Q3383'
+q3470 = stim=stimdefault_syn_francesco; stim.identity='Q3470'
+q3910 = stim=stimdefault_syn_francesco; stim.identity='Q3910'
+q4765 = stim=stimdefault_syn_francesco; stim.identity='Q4765'
+q5545 = stim=stimdefault_syn_francesco; stim.identity='Q5545'
+raw = stim=stimdefault_ud_francesco('raw')
+raw balb f = stim=stimdefault_ud_francesco('raw')
+rec = stim.identity='rec'
+rec u = stim.identity='rec u'
+ringer = stim=stimdefault_syn_francesco; stim.category='negative_control';
+ringer's = stim=stimdefault_syn_francesco; stim.category='negative_control';
+ringer's 0.1%dmso = stim.category='negative_control'; stim.identity='DMSO'; stim.concentration=1e-3
+ringer's 1 = stim.category='negative_control'; stim.identity=''; stim.user_tag = '1'
+ringer's 2 = stim.category='negative_control'; stim.identity=''; stim.user_tag='2'
+ringer's 3 = stim.category='negative_control'; stim.identity=''; stim.user_tag='3'
+ringer's 4 = stim.category='negative_control'; stim.identity=''; stim.user_tag='4'
+ringer's 5 = stim.category='negative_control'; stim.identity=''; stim.user_tag='5'
+ringer's 6 = stim.category='negative_control'; stim.identity=''; stim.user_tag='6'
+ringer's 7 = stim.category='negative_control'; stim.identity=''; stim.user_tag='7'
+ringer's1 = stim.category='negative_control'; stim.identity=''; stim.user_tag='1'
+ringer's1 dmso = stim.category='negative_control'; stim.identity='DMSO'; stim.concentration=1e-3; stim.user_tag='1'
+ringer's2 = stim=stimdefault_syn_francesco; stim.category='negative_control'; stim.identity=''; stim.user_tag='2'
+ringer's2 dmso = stim.category='negative_control'; stim.identity='DMSO'; stim.concentration=1e-3; stim.user_tag='2'
+sample1 = stim.identity='sample1'
+sample10 = stim.identity='sample10'
+sample11 = stim.identity='sample11'
+sample12 = stim.identity='sample12'
+sample2 = stim.identity='sample2'
+sample3 = stim.identity='sample3'
+sample4 = stim.identity='sample4'
+sample5 = stim.identity='sample5'
+sample6 = stim.identity='sample6'
+sample7 = stim.identity='sample7'
+sample8 = stim.identity='sample8'
+sample9 = stim.identity='sample9'
+syfp = stim.identity='SYFPEITHI'; stim.category='peptide'; stim.concentration=NaN
+u = stim=stimdefault_ud_francesco('filtered')
+u/100+p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='+pronase'; stim.concentration=0.01
+u/100-p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='-pronase'; stim.concentration=0.01
+u/1000+p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='+pronase'; stim.concentration=0.001
+u/1000-p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='-pronase'; stim.concentration=0.001
+u/300+p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='+pronase'; stim.concentration=1/300
+u/300-p = stim=stimdefault_ud_francesco('filtered'); stim.procedure{end+1}='-pronase'; stim.concentration=1/300
+wax = stim=stimdefault_ud_francesco('WAX')
+1:100fmu = stim=stimdefault_ud_francesco('filtered'); stim.sex='F'; stim.concentration=1/100

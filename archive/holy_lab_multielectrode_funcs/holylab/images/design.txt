@@ -1,0 +1,65 @@
+ROI drawing callback should be a standalone function, so we can draw ROIs from any image.
+ROI drawing on any given image should interact with several other plots:
+1. On thumbnails, should be able to show the ROI positions (note this will have to include imresize functionality, maybe should define imresize and imcrop for ROIs!) This will help determine if there need to be slight shifts in position over time.
+2. Should show a summary deltaf plot, where deltaf is measured for ROIs on each trial, organized along the x-axis by valve number. Or in fact, a separate axis for each ROI, with valves on the x-axis? Putting all ROIs in a single plot could be really confusing. This window is the one that should have a "saveroidefinitions" button.
+
+So, we need the following categories of figure windows:
+1. Deltaf plot, with subaxes for each ROI. Thumbnail on intact figure giving the position? Click on either axis for a blowup. Click on valve response to pull up corresponding window in #3 (with ROI shown?) This has the saveROIdefs button.
+2. Averaged dfthumbs windows, one axis for each valve (averaging across repeats). Clicking on this axis brings up the panel in #3.
+3. dfthumbs windows (1 per valve), each window has one axis/repeat. Clicking on an image brings up ROI drawing. Left-clicking brings up a context menu, which includes "show movie." Movie loads with a default set on looping around this valve transition, with an option to "break out" of those confines. The movie player could be mplay or a C program. For these thumbnails (once loaded into memory), mplay seems perfectly adequate. But loading a sequence of 60 (?) 0.25mag thumbnails took about 10s on my laptop, so would get a max framerate of about 6frames/s until buffering kicks in. User control over whether timer is in 'drop' or 'just do it' (?) mode?
+
+Other ideas:
+Define ROIs from any plot? Mechanism to propagate coordinates up to a defined vector of vimages? I.e., once you get up to any of the following, you're OK, but keep climbing until you do.
+Context menu for making manipulations? I.e., suppose user is looking at movie thumbnail, wants to define ROIs, but doesn't like the resolution of the thumbnail. Right click, pop up ancestor (now wait forever while it calculates). Or perhaps multiple levels? Perhaps make a new manipulation? Now draw the ROI.
+For multi-arg functions like imwsum: define ancestor as the first vimage argument.  That means analysis scripts should put things in this order.
+
+Interfaces:
+ROI definitions are stored in...category #1 above? (deltaf quantification). Largely because of save button.
+
+roistructs:
+Contain the actual roidata, i.e. positions and sizes, but also labels for individual ROIs. type: a single character.
+tform field!
+Note an image in an axis should store an identifier, e.g., the vimage, for passing data through callbacks.
+
+roidraw(hax,roi_in,roi_out_command)
+roi_in is an roistruct
+roi_out should give info about what to do with the result: if empty, then this should uiwait and give roistruct output as soon as the user completes a single command. If a function handle, then this just sets up a callback mode, the function should pass the axis' current roi structure. roidraw should allow drawing a new ROI, deleting an ROI, moving/resizing an ROI, and shifting a whole field of ROIs. Rotations? Don't handle this initially, but expect to handle that by a right-click callback. Perhaps translations should be handled similarly---i.e., context menu "shift field" and then user selects an object and drags to a new location, that accomplishes a global shift; if user selects while holding down the shift key, the action doesn't finish until ButtonUp w/o shift key.  Note can use cp2tform to calculate the transform, 'linear conformal' mode, but make sure sure that scale = 1 (divide by sc^2 + ss^2, see help for cp2tform).
+
+Note that drawing a new ROI, deleting an ROI, moving/resizing an ROI are all "immediate" and should be encoded in the coordinates of each ROI.  But perhaps whole-scale shifts should be encoded separately? It depends on how the whole temporal drift thing should be handled. If moving/resizing of a single ROI should be propagated through to other time points, then needs separate encoding.
+Another benefit to separate encoding is that it could be the basis for image registration---if we store the tforms, then they are easy to recover.
+This means that roidraw's transformation should be handled by composition of the input tform with any desired additional tform.
+
+hroi = roiplot(roi_in)
+hroi = roiplot(hax,roi_in)
+Given an roistruct roi_in, plots the rois on the current axis or hax, if supplied. hroi is a set of handles to lines.
+
+intens = roimeasure(im,roi_in)
+measures the intensity within ROIs. This got generalized to roimeasure(im,roi1,roi2,'skiplast') to facilitate efficient ROI position interpolation (to cope with drift).
+
+tform = vimage_tform(sourcevimage,destvimage) returns a tform structure mapping coordinates in one vimage to another.  One of source/dest must be the ancestor of the other (or, allow common ancestor?).  Source must be a scalar, dest could be a vector of valid ancestors?  These tforms will be 'affine', with translation + scale (no rotation).
+Note that this function can come later.
+
+roi_out = roitformfwd(roi_in)
+roi_out = roitforminv(roi_in)
+These apply tforms to roistructs, as in tformfwd and tforminv in the image processing toolbox. The tform is a field 'tform' in the roistruct.
+Or do we not need these? Perhaps only "roiplot" and "roimeasure" need to make tforms on ROIs?
+Don't write these immediately, they may not be used.
+
+roistruct = roiget(h,requestimageid)
+This retrieves an roi_in structure, queried from object h, where rois are to be drawn in image labelled by requestimageid (e.g., vimage).
+
+roiset(h,requestimageid,roistruct)
+This is the callback that will be used in roi_out for roidraw.
+
+Note that roiget & roiset are the functions that are going to have to handle the whole temporal drift issue. They should be able to work simply in cases where this is not considered, but allow a sequence of transformations when this possibility is required.  These will be a little grim.
+Figure storage of roistructs should be done in the following way: define actual coordinates for the first frame, and then store a sequence of tforms at individual frames. These tforms are _composites_ rather than steps: i.e., a tform defined for image 1395 tells how to get from frame 1 directly to 1395, not how to get to 1395 from 1184, the last frame for which a tform was defined.
+
+Movie player:
+Include temporal filtering rather than explicit background subtraction? This seems like a really good idea. Obviously, not in the player, but in the supplied movie.
+
+
+Note: add a imagehandle field to the imphys object? imphysfetch could look for this field, see if it's a valid handle, and then return the image from the CData property of the image! That way, don't need to have 2 copies in memory. But it also avoids "contaminating" the vimage record.
+Implemented: added the field to the vimageobject. Then it's all transparent, and it doesn't change the vimage history.
+
+
+

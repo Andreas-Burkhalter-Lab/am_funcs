@@ -1,0 +1,3 @@
+#! /bin/bash
+psnum=$(ps -H -utim | grep sendstim | cut -d p -f 1)
+kill -9 $psnum

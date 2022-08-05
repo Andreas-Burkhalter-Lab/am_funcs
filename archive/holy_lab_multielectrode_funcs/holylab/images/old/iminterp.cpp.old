@@ -1,0 +1,134 @@
+#include "mex.h"
+
+/*
+ * iminterp: interpolate an image using a lower-resolution deformation
+ *
+ * Syntax:
+ *   imout = iminterp(im,X1,X2,...)
+ * where
+ *   im is the input image (may be multidimensional)
+ *   X1, X2, ... are arrays, of the same dimensions of the image, but not necessarily of the same size as the image.  These arrays specify a deformation X1 = g_1(x) for x over the points on a grid of different resolution.
+ *
+ * Copyright 2006 by Timothy E. Holy
+ */
+
+void iminterpwork(const float *im,int n_dims,const int *sz_im,const float *g[],const int *sz_g);
+int validate_dimensions(const int *,const int *,int);
+
+/*
+ * This is the Matlab wrapper
+ */
+
+void mexFunction(
+		 int nlhs, mxArray *plhs[],
+		 int nrhs, const mxArray *prhs[])
+{
+  const float *im,*g[3];
+  float *imout;
+  int n_dims,dimIndex;
+  const int *sz_im,*sz_g;
+  const mxArray *curarg;
+
+  if (nrhs < 2)
+    mexErrMsgTxt("Jtinvw: requires at least two inputs");
+  if (nlhs != 1)
+    mexErrMsgTxt("Jtinvw: requires one output");
+
+  // Parse the inputs
+  // image
+  curarg = prhs[0];
+  if (!mxIsNumeric(curarg) || mxIsComplex(curarg) || !mxIsSingle(curarg))
+    mexErrMsgTxt("iminterp: image must be a real single-precision array");
+  im = (float *) mxGetData(curarg);
+  n_dims = mxGetNumberOfDimensions(curarg);
+  if (n_dims + 1 != nrhs)
+    mexErrMsgTxt("iminterp: dimensionality of image and number of inputs do not match");
+  sz_im = mxGetDimensions(curarg);
+
+  // Components of g
+  for (dimIndex = 0; dimIndex < n_dims; dimIndex++) {
+    curarg = prhs[1+dimIndex];
+    if (!mxIsNumeric(curarg) || mxIsComplex(curarg) || !mxIsSingle(curarg))
+      mexErrMsgTxt("iminterp: components of g must be a real single-precision array");
+    g[dimIndex] = (float *) mxGetData(curarg);
+    if (mxGetNumberOfDimensions(curarg) != n_dims)
+      mexErrMsgTxt("iminterp: dimensionality of components of g must equal image dimensionality");
+    if (dimIndex == 0)
+      sz_g = mxGetDimensions(curarg);
+    else
+      if (!validate_dimensions(sz_g,mxGetDimensions(curarg),n_dims))
+	mexErrMsgTxt("iminterp: all components of g must have the same size");
+  }
+    
+
+  // Set up the output
+  plhs[0] = mxCreateNumericArray(n_dims,sz_im,mxSINGLE_CLASS,mxREAL);
+  imout = (float *) mxGetData(plhs[0]);
+
+  // Do the actual work
+  iminterpwork(im,n_dims,sz_im,g,sz_g);
+
+  return;
+}
+
+
+/*
+ * Do the actual interpolation.
+ */
+void iminterpwork(const float *im,int n_dims,const int *sz_im,const float *g[],const int *sz_g)
+{
+  
+}
+
+
+void Jtinvwwork(const float *J,const float *Jend,int matrix_dim,const float *detJ,const float *w,float *Jti,float *x)
+{
+  int pixelSkip;
+  float detJtmp;
+
+  pixelSkip = matrix_dim*matrix_dim;
+  if (matrix_dim == 1)
+    for (; J < Jend; J++,w++,Jti++,x++) {
+      *Jti = 1.0 / *J;
+      *x = *w * *Jti;
+    }
+  else if (matrix_dim == 2)
+    for (; J < Jend; J += pixelSkip, detJ++, w += matrix_dim, Jti += pixelSkip, x += matrix_dim) {
+      detJtmp = *detJ;
+      Jti[0] = J[3] / detJtmp;
+      Jti[1] = -J[2] / detJtmp;
+      Jti[2] = -J[1] / detJtmp;
+      Jti[3] = J[0] / detJtmp;
+      x[0] = Jti[0]*w[0] + Jti[2]*w[1];
+      x[1] = Jti[1]*w[0] + Jti[3]*w[1];
+    }
+  else if (matrix_dim == 3)
+    for (; J < Jend; J += pixelSkip, detJ++, w += matrix_dim, Jti += pixelSkip, x += matrix_dim) {
+      detJtmp = *detJ;
+      Jti[0] = (J[4]*J[8]-J[7]*J[5]) / detJtmp;
+      Jti[3] = -(J[1]*J[8]-J[7]*J[2]) / detJtmp;
+      Jti[6] = (J[1]*J[5]-J[4]*J[2]) / detJtmp;
+      Jti[1] = -(J[3]*J[8]-J[6]*J[5]) / detJtmp;
+      Jti[4] = (J[0]*J[8]-J[6]*J[2]) / detJtmp;
+      Jti[7] = -(J[0]*J[5]-J[3]*J[2]) / detJtmp;
+      Jti[2] = (J[3]*J[7]-J[6]*J[4]) / detJtmp;
+      Jti[5] = -(J[0]*J[7]-J[6]*J[1]) / detJtmp;
+      Jti[8] = (J[0]*J[4]-J[3]*J[1]) / detJtmp;
+      x[0] = Jti[0]*w[0] + Jti[3]*w[1] + Jti[6]*w[2];
+      x[1] = Jti[1]*w[0] + Jti[4]*w[1] + Jti[7]*w[2];
+      x[2] = Jti[2]*w[0] + Jti[5]*w[1] + Jti[8]*w[2];
+    }
+
+  return;
+}
+
+int validate_dimensions(const int *d1,const int *d2, int n_dims)
+{
+  int i;
+
+  for (i = 0; i < n_dims; i++)
+    if (d1[i] != d2[i])
+      return 0;
+
+  return 1;
+}

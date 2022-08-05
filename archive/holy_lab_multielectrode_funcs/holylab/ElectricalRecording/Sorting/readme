@@ -1,0 +1,151 @@
+Overview:
+
+This directory contains software for sorting spikes, i.e., classifying
+them on the basis of spike waveform shape.  There are two major
+components:
+     autosort: does automatic sorting of spikes into categories (runs
+               well in batch mode/overnight)
+     cass: "Computer Aided Spike Sorting", a GUI program for examining,
+           choosing, and modifying the results from autosort.
+
+The principle of sorting is to find a set of "landmarks" (i.e.,
+template waveforms) which in some sense represent the total variety of
+spike waveforms.  Given a set of landmarks, each spike will ultimately
+be associated with its nearest landmark.  Unlike many spike sorting
+programs, we allow one cell to be defined by multiple
+landmarks---sorting is largely an effort in figuring out how landmarks
+should be grouped together.  autosort does this based on estimates of
+the density of spike waveforms in the vicinity of the landmark.  cass
+allows you to further merge groups of landmarks.
+
+Both autosort and cass are set up to operate on a subset of spike
+waveforms, so that you don't have to be able to load all the spike
+waveforms into your RAM at once.  Both of these functions, therefore,
+save data only about the _rules_ for classifying waveforms, and don't
+save any actual categorizations for anything other than the landmarks.
+The one exception to this is in cass, when you ask for temporal
+correlation data: then, the categorization is applied to all the spike
+waveforms, albeit only temporarily (in memory, rather than to disk).
+
+To sort individual spikes, you'll want to call the function
+"cass_sort_apply", which will generate disk files which contain the
+times of each spike assigned to each identified cell.
+
+autosort & cass create and operate on the following directory structure:
+
+    base directory: contains .ssnp files
+         |
+         |------> sort1 directory: contains overview.mat
+                       |
+                       |---->chanA: *.mat has rules, *.sorted has spike times
+                       |---->chanB
+                       |---->chanC
+                         ...
+
+
+
+
+Getting started:
+
+I recommend trying sorting some fake data.  The fake data are spike
+waveforms (which don't look much like spikes...) with known
+classification, because we controlled their generation.  Not only can
+you test the software this way, but you will get to know how it works.
+
+Copy all the files beginning with "fake_" to a directory in which you
+have write permission.  First execute "fake_make" to create the fake
+data set.  Then execute "fake_run" to run autosort on this data set.
+Examine the code in fake_run to see the steps you'll need to take to
+run autosort on your own data.
+
+After autosort completes, type "cass" on the command line, and from the File menu, choose "Open Project".  Now play around and figure out how cass works. <More detail is invited here>
+
+When you're done, be sure to save to a file.  Then, from the base
+directory, execute cass_sort_apply('sort1').  You're done!  Your
+results will be in sort1/chan55/??.sorted, where ?? is whatever
+basename you supplied when you saved data in cass.  You can compare
+the spike classification to the correct results.
+
+
+
+Comparing to LoopChannels:
+
+For a while, it might be very instructive to sort data in LoopChannels
+in parallel with cass, to compare the new code with the old.  There
+are a couple of features present in LoopChannels that do not currently
+have replacements in cass (see "Limitations" below).  You could get
+cass running (after having run autosort) and then launch LoopChannels,
+and go back and forth between the two.  You can even compare the
+output files, if you like.
+
+
+
+Bugs:
+
+I'm sure there are some.  Please report them.  See in particular the
+note in "fake_run" about turning on debugging aids before you begin a
+long autosort run.  Here are some known bugs:
+--Long ago, I got a single error from kmeans_hard, but because
+  debugging flags were not on I could not determine the cause of the
+  bug.  I've never seen this happen again.  Someday, it will happen
+  again, and then we can stomp on it if you've turned on the appropriate
+  flags! 
+
+
+
+
+Limitations:
+
+Here are some limitations.  Fixing these would be good projects for
+other people as well as myself...  To facilitate contributions, I've
+marked the difficulty level of each fix.
+
+-- (EASY) In cass, hitting "t correlations" does not report
+cross-correlations, only autocorrelations.  The function
+"cluster_correlations.m" is the only function that needs modifying,
+and it should be fairly self-contained.
+
+-- (HARD) There are GUI handles to permit trying new means of choosing
+projection directions.  Currently, those handles don't do anything.
+The main difficulty here is that projection directions interact with
+all the decisions in spike sorting.  However, you could start fairly
+easily by just popping up a new figure so that the user can look at it
+and see if there is any virtue in a new visualization method.  If a
+useful method is found, then the hard work of wiring it into cass
+proper could be done.
+
+-- (NONE or MODERATE) The whole "Choose Proj" to choose a subset of
+directions has not been well-tested.  The need for this may have been
+diminished somewhat by my reworking of the auto-classification code
+(using clust_em_climb rather than meanshift).  However, if you find
+yourself using this, you may find problems that will not be too hard
+to fix.
+
+-- (MODERATE) GUI fixes: I'm sure I haven't abused cass properly.
+Thus, when you do something I didn't ever test, it may do some
+unexpected things.  I also haven't tried to do stuff like gray out
+buttons when their action would be inappropriate or ineffective.
+These fixes are relatively straightforward, but you'll have to get to
+know the cass code before you can tackle this, thus the "moderate"
+rating.  This would, however, be a good way to get acquainted with the
+code.
+
+-- (DEPENDS) Interacting with other analysis programs: it would be
+possible to have cass export its current state so that you can do
+spike analysis on the spot.  Largely, this would involve passing
+landmarkClust and landmarkIndex_total [or more likely,
+landmarkClust(landmarkIndex_total)] and the snippet times to some
+other function.  You could quite easily add a button to the cass GUI
+to do this.  The "depends" part comes down to what you want to do from
+there...
+
+-- (HARD) If you like the stability plot display, but want to know what happens when various clusters become unstable, you could add a facility to produce a graph-type plot showing connectivity among landmarks.
+
+-- (EASY) If you find yourself redefining projections a lot, you'll
+notice that the stability plot goes away.  You could implement a
+method for re-calculating the needed data.  In general, that aspect of
+the calculation is pretty fast---it's the EM step which is slow, and
+that only has to be done once for each set of projections.  (And
+you're already waiting for that calculation.) So, in most cases the
+user would probably not be unduly delayed waiting for these
+recalculations.

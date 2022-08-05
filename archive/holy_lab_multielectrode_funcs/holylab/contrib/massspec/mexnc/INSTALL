@@ -1,0 +1,84 @@
+First of all, please don't ask me about the Netcdf Toolbox.  Thank you.
+
+Standard Install Instructions:
+========================================================================
+If your download already contains a mex-file and if you don't use 
+windows, you may already be set.  Just add the path to this directory 
+to your matlab path and give it a go.  If you need to compile the mex-
+file, read down below in the section "Compiling Your Own".  But first,
+some platform-specific notes for windows users.
+
+
+
+Platform-Specific Notes:
+========================================================================
+  If your platform isn't listed here, then either there aren't any
+  problems with the standard installation or nobody has reported any
+  yet...
+
+
+  Windows
+  ======================================================================
+    In the win32 directory is a file called netcdf.dll.  You will
+    need this in order to run mexnc.  Please install it somewhere on
+    your system path or just add it to your path.  That's your SYSTEM 
+    PATH, not your MATLAB PATH.
+
+    On windows XP, you can find and set your system path like so...
+
+        Start => Settings => Control Panel => System => Advanced =>
+        Environment Variables => System Variables
+
+    Then select PATH, and either edit it to include the path to the 
+    netcdf.dll file, or put the netcdf.dll file somewhere on that path.
+    You should then reboot.
+
+    You should remove any old version of the netcdf.dll.
+
+    If you wish to compile your own windows mex-file, please look in
+    the win32 directory for the proper m-file which which to build.
+
+Compiling your Own:
+========================================================================
+If you need to roll your own on UNIX or unix-like systems, first locate
+a file called "mexopts.sh" on your system.  It should be located
+under your matlab bin directory.  For example, on my linux system,
+matlab is installed in /opt/matlab, and the location of mexopts.sh is
+/opt/matlab/bin/mexopts.sh .  So copy that file into the directory into
+which you unpacked mexnc.  
+
+You then need to edit it, inserting the following lines in down at the
+bottom in the "Architecture independent lines" section.  
+
+    NETCDF="/path/to/netcdf"
+    EXTRA_CFLAGS="-I${NETCDF}/include"
+    EXTRA_CLIBS="-L${NETCDF}/lib -lnetcdf "
+    CFLAGS="-g $CFLAGS ${EXTRA_CFLAGS}"
+    CLIBS="$CLIBS ${EXTRA_CLIBS} "
+
+Just change the value of NETCDF to reflect the netcdf installation
+location on your system.
+
+Then, from the command line prompt, type
+
+    make
+
+The result of this should be a mex-file called "mexnc.mex___", where the
+"___" is replaced by a suffix suitable to your platform (e.g. "glx" for
+linux, "mac" for Mac OS X, etc).  
+
+If compiling for windows, please take a look at the m-files
+win32*.m.  They require Microsoft Visual C++ compiler version 7.1
+and Matlab 7 (sp1) and single threaded NetCDF 3.6.1 library (w/ large
+file support), but maybe you can get it to work for other variations.
+
+You will need to already have NetCDF installed on your system before
+attempting to compile mexnc.
+
+Make sure you add the directory into which this file was unpacked to
+your matlab path.  If you also dowload the netcdf_toolbox, make sure
+that mexnc precedes the netcdf_toolbox in your matlab path.
+
+For information about building with opendap libraries, please see 
+http://mexcdf.sourceforge.net/opendap/.
+

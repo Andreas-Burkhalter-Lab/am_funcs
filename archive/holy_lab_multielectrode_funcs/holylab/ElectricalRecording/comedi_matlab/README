@@ -1,0 +1,23 @@
+Read the INSTALL file for installation instructions.
+
+This directory has a Contents.m file, which means that the "helpwin"
+function under MATLAB will give you hyperlinked help for the functions
+in this directory.  Put this directory somewhere on your MATLAB path.
+
+There are four example files, which may be helpful in learning how to
+use these functions:
+  aitest: Tests asynchronous analog input.  This is the most thoroughly
+    refined of the examples, and is therefore more complex but also more
+    flexible.  It may even run without you having to tweak any of the
+    parameters in the file.
+  aotest: Tests analog output
+  aiaotest: Tests simultaneous input & output.  I think this won't run
+    (I haven't maintained it since I changed some function names), but it
+    may be useful as a starting point.
+  diotest: Tests digital I/O
+
+For some things missing from this collection, see the file comedi_missing.m.
+
+Report bugs to Tim Holy <holy@pcg.wustl.edu>.
+
+MATLAB is a registered trademark of The MathWorks, Inc.

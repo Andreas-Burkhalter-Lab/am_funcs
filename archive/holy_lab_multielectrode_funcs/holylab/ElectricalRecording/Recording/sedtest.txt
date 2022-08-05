@@ -1,0 +1,10 @@
+function RecCB(action, hfig)
+if (nargin < 2)
+        hfig = gcbf;
+end
+hobj = gcbo;
+global gIsRecording;
+ud = get(hfig,'UserData');
+switch(action)
+    
+case 'LoadAxes'

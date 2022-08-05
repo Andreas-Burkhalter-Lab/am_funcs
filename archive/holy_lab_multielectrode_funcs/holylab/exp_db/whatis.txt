@@ -1,0 +1,35 @@
+What is what
+
+    zsguo
+----------------------
+* engine: the core of the experiment database. 
+   Very little is assumed:
+     - each entry (a database record) is a matlab struct
+     - the struct has at least one field: id
+   So we can still use the same core interface if either
+     - we change the backend to a real dbms
+     - we change what fields are there in each entry
+
+   To make your code survive those changes, please don't work on file
+   /usr/lab/exp_db/*/*.xdb directly, instead following should be used:
+     - query:  search_xdb()
+     - insert: save_xdb_entry()
+     - delete: delete_xdb_entry()
+     - update: save_xdb_entry() (by specifying an id)
+
+* content_specific: well, this is maybe a bad naming. Basically what 
+   inside this dir specifies the field requirement suitable for our lab.
+
+* convenient: current a few wrappers around search_xdb() to make life easier.
+
+* exp_specific: holds experiment-specific and investigator-specific scripts
+   and callbacks.
+
+* general_utils: supporting funcs that can also be used outside xdb context.
+
+* operators: the operators(func handles) useful for specifying conditions
+   in query_callback_and().
+
+
+   
+   

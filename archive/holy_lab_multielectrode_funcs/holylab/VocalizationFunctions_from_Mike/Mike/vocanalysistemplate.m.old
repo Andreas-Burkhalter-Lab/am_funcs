@@ -1,0 +1,1312 @@
+%% Set several variables which will be used again and again:
+rootpath = what;
+rootpath = rootpath.path;
+
+if ~isempty(findstr(rootpath,'WAVs'))
+    cd ..;
+    rootpath = what;
+    rootpath = rootpath.path;
+end
+
+
+
+prompt = {'FFT size: ', ...
+          'From Frequency (Hz):',...
+          'To Frequency (Hz):',...
+          'Sample Rate (Hz):',...
+          'Minimum Syllable Size (seconds):',...
+          'Minimum Syllable Mean Frequency (kHz):', ...
+          'Minimum Spectral Purity:',...
+          'Maximum Spectral Discontinuity:',...
+          'Gain setting:',...
+          'Convert to PSD to Voltage Units? (1 - Yes, 0 - No):',...
+          'Minimum fold change for Syllable Peak Heights:'};
+          
+dlgtitle = 'Set Start Up Variables';
+defAns = {'512','25000','125000','250000','0.005','35000','0.25','1','4','1','2'};
+inputVariables = inputdlg(prompt,dlgtitle,1,defAns);
+inputVariables = str2double(inputVariables);
+if ~isdir('./Vars')
+    mkdir('./Vars');
+end
+save('./Vars/inputVariables.mat','inputVariables','prompt','rootpath');
+
+
+%% Determine Threshold
+
+% Be in WAVs directory
+cd([rootpath,'\WAVs']);
+a = dir('*.WAV');
+n = numel(a);
+if exist('fileThreshs','var')
+  k = 1:n; %If you want to calculate for every filed
+else
+  k = randsample(n,floor(0.1*n));         % Pick a random 10% of the files
+end
+
+threshs = zeros(1,numel(k));
+for i = 1:numel(k)
+    threshs(i) = sngthreshold(a(k(i)).name,inputVariables(1),inputVariables(4));     % Have user determine baseline for each file.
+end
+
+threshold = max(threshs);               
+if ~isdir('../Vars')
+    mkdir('../Vars');
+end
+if exist('fileThreshs','var')
+    fileThreshs = threshs;
+    save('../Vars/threshold.mat','fileThreshs','threshold');
+else
+    save('../Vars/threshold.mat','threshs','threshold');
+end
+
+
+%% Make sonograms
+cd([rootpath,'\WAVs']);
+wavs = dir('*.WAV');
+h = waitbar(0,'Calculating sonograms');
+sngparms = struct('threshold',threshold,'plot',0,'progressbar',0,'freqrange',...
+    [inputVariables(2),inputVariables(3)],'nfreq',inputVariables(1)/2,...
+    'voltageMin',-(2^15),'voltageMax',(2^15 - 1));
+for i = 1:numel(wavs)
+    k = find(wavs(i).name == '.');
+    k = k(end);
+    if exist('fileThreshs','var')
+    sngparms.threshold = fileThreshs(i); % run this if files are separately
+    end
+    outfilename = [wavs(i).name(1:k-1),'.SNG'];
+    sound2sng(wavs(i).name,sngparms,...
+        outfilename);
+    waitbar(i/numel(wavs),h);
+end
+
+if ~isdir('../SNGs')
+    mkdir('../SNGs');
+end
+fclose('all');
+close(h);
+movefile('*.SNG','../SNGs/');
+
+%% Run whistimes
+clearvars -except inputVariables rootpath
+cd([rootpath,'\SNGs']);
+whistimesoptions = whistimesdefaults;
+whistimesoptions.durationthresh = inputVariables(5);
+whistimesoptions.meanfreqthresh = inputVariables(6);
+whistimesoptions.puritythresh = inputVariables(7);
+whistimesoptions.specdiscthresh = inputVariables(8);
+a = dir('*.SNG');
+h = waitbar(0,'Calculating whistimes (0% done)');
+for n = 1:numel(a)
+    [sng, header] = ReadSonogram(a(n).name);
+    twhis = whistimes(sng, header, whistimesoptions);
+    save(['twhis',a(n).name,'.mat'],'twhis');
+    snips = whissnip(sng,header,twhis);
+    save(['snips',a(n).name,'.mat'],'snips');
+    waitbar(n/numel(a),h,['Calculating whistimes (',num2str((n/numel(a))*100),'% done)']); 
+end
+close(h);
+if ~isdir('../Outputs')
+    mkdir('../Outputs');
+end
+fclose('all');
+movefile('*.mat','../Outputs/');
+save('../Vars/whistimesoptions.mat','whistimesoptions');
+%% Spot check and make sure the syllables are being called correctly:
+% Be in the Outputs directory
+cd([rootpath,'\Outputs']);
+twhiss = dir('twhis*');
+sngs = dir('../SNGs/*.SNG');
+k = randsample(numel(sngs),1);
+load(twhiss(k).name);
+whistimesplot(['../SNGs/',sngs(k).name],[],twhis);
+
+
+%% Compile the full data structure
+clearvars -except inputVariables rootpath;
+cd([rootpath,'\Outputs']);
+twhiss = dir('twhis*');
+snipss = dir('snips*');
+load('../Vars/threshold.mat');
+nfft = inputVariables(1);         % Change these if different!
+samprate = inputVariables(4);  % Change these if different!
+gain = inputVariables(9);           % Change if different!
+convertVoltage = inputVariables(10); % Change to false to leave as native bits! This is really only the case for collabs with non dougherty lab. We keep track of gain here.
+f = linspace(0,samprate/2,nfft/2 + 1);
+scale = inputVariables(11);          % fold change above threshold for frequency calculations. Use to tweak removed syllables and get rid of systematic errors. 
+data(numel(snipss)).nwhis = [];
+removedsyllables = cell(1,numel(snipss));
+clippedsylls = cell(1,numel(snipss));
+h = waitbar(0,'Compiling data structure (0% done)');
+for i = 1:numel(snipss)
+
+    load(twhiss(i).name);
+    load(snipss(i).name);
+    % for separate threshold: 
+    if exist('fileThreshs','var')
+        threshold = fileThreshs(i);
+    end
+    % for separate gains
+    if exist('fileGains','var')
+        gain = fileGains(i);
+    end
+    
+    data(i).nwhis = size(twhis,2);                      % Number of syllables: This is just the number of columns in twhis
+    if data(i).nwhis > 0
+    data(i).twhis = twhis;                              % Syllable start and end times
+    data(i).dt = twhis(2,:) - twhis(1,:) ;              % Duration (end - start)
+    
+    data(i).peakfreq = cell(1,data(i).nwhis);           % Peak frequency
+    data(i).speclines = cell(1,data(i).nwhis);          % Lines in the spectrum
+    toclean = zeros(1,data(i).nwhis);
+    clipped = zeros(1,data(i).nwhis);
+    for j = 1:data(i).nwhis
+        data(i).speclines{j} = syllablelines(snips{j},threshold,nfft,samprate,scale);    % Calculate the lines for complex syllables
+        data(i).numlines(j) = numel(data(i).speclines{j});                        % Number of lines in the syllable
+        data(i).peakfreq{j} = zeros(1,size(snips{j},2));                           % Initialize peak frequency calculations.
+        pow = abs(full(snips{j})).^2;
+        pow(pow == 0) = threshold^2;
+       for t = 1:size(snips{j},2)                                                   % Calculate peak frequency in each time bin
+         if max(pow(:,t)) >= scale*(threshold^2)                                      % Max power in any been must be 2X above baseline
+             data(i).peakfreq{j}(t) = find(pow(:,t) == max(pow(:,t)),1);                            % Row index where max occurs
+             data(i).peakfreq{j}(t) = f(data(i).peakfreq{j}(t));                                                % Corresponding frequency in Hz.
+         end
+       end
+       
+       % Because of whistimes tolerate losses of power between successive
+       % bins up to 30 ms by default, there can be zeros. To deal with
+       % this, replace any zeros with averages of close neighbors, and perform a
+       % smooth. This fixes the problem that whisparams has where some
+       % syllables have peak frequency data which ends up being all zeros.
+       % Actually, I don't know why that particular error happens, but I
+       % think it's related to this. Anyway, that should never happen with
+       % this method, and all the data gets to be 'usable' without
+       % truncation.
+           
+        k = find(data(i).peakfreq{j} == 0);  
+        m = find(data(i).peakfreq{j});
+        
+        if ~isempty(k) && ~isempty(m)
+          for t = 1:numel(k)
+            dist = abs(m - k(t));                                                   % Subtract index of value-containing entries from the zero entry
+            dist = m(find(dist == min(dist(dist>0)),1));                                % Index of value containing entries closest. This is usual 1 away but could be more in the case of multiple zeros.
+            data(i).peakfreq{j}(k(t)) = data(i).peakfreq{j}(dist);            % Average these closest value(s) and replace the zero.
+          end
+        elseif isempty(m);
+            toclean(j) = 1; % mark this syllable to get removed
+        end
+        
+        data(i).peakfreqt1t2{j} = [data(i).peakfreq{j}(1:end-1);data(i).peakfreq{j}(2:end)]; % For the jump histogram for Tim's classification method.
+        data(i).peakdiff{j} = diff(data(i).peakfreq{j});
+        data(i).maxjump(j) = max(abs(data(i).peakdiff{j}));                                  % Max jump.
+        data(i).alljumps{j} = zeros(1,12);
+        % This is Terra's recommendation that I look at jumps of different
+        % sizes. In this case:
+        % >=500,1000,5000,10000,15000,20000,250000,30000,35000,40000,45000,50000
+            jumps = [500,1000,5000,10000,15000,20000,25000,30000,35000,40000,45000,50000];
+            for t = 1:12
+                data(i).alljumps{j}(t) = numel(find(data(i).peakdiff{j} >= jumps(t)));
+            end
+        
+            
+            
+        % Ok great. Now calculate various other statistics. This stuff is
+        % from my old iterations of this code.
+        data(i).meanfreq(j) = mean(data(i).peakfreq{j});                            % Mean fundamental.
+        
+        data(i).medianfreq(j) = median(data(i).peakfreq{j});                        % Median fundamental
+        
+        data(i).freqrange(j) = max(data(i).peakfreq{j}) - min(data(i).peakfreq{j}); % The bandwidth
+        
+        data(i).freqsd(j) = std(data(i).peakfreq{j});                               % The standard deviation, in Hz.
+        % Calculate a trend slope
+        fitparams = polyfit((0:size(data(i).peakfreq{j},2)-1).*(nfft/2/samprate*1000),...  % time in milliseconds    
+                                        data(i).peakfreq{j},...                            % f in Hz.
+                                        1);                                                % Linear calc.
+        data(i).trendslope(j) = fitparams(1);                                              % Slope. Forget intercept.
+        
+        
+        % Convert to Volts just for the PSD below. This is unnecessary for sp. 
+        % but scaling to voltage units is useful for a formal PSD.
+        % Uncomment one of the following lines if you do or don't want to
+        % scale.
+        if convertVoltage == true
+            mag = abs(snips{j}).*micconvert(16,'V',gain);                                                                                    
+        else
+            mag = abs(snips{j});
+        end
+       
+        
+        [~,~,data(i).sp{j}] = specpurity(mag.^2);                                          
+        data(i).sp{j} = data(i).sp{j}./(nfft/2+1);
+        data(i).spmean(j) = mean(data(i).sp{j});
+        data(i).spsd(j) = std(data(i).sp{j});
+        
+        % Follows instructions on Mathworks for scaling the PSD from FFT
+        % magnitudes. Scaling factor is (1/(NFFT*Samprate)). Units here
+        % with micconvert as above are V*V/Hz. To calculate the power in a
+        % frequency band, integrate from index1 to index2 times df, where
+        % df = Fs/NFFT to give you power in V^2. Multiply by 10^6 for mV^2
+        % if it makes it easier to visualize. Or calculate in dBV by
+        % multiplying 10*log10(power).
+        
+        % How and why the scaling works:
+        
+        % The FFT magnitudes represent contributions from two types of
+        % frequencies: f(1) (= 0 Hz, DC Bias) & f(nfft/2+1) ( = samprate/2)
+        % are 'special', in that they are not repeated for real valued
+        % data. All the data f(2:nfft/2) are split in contribution between
+        % mirror image positive and negative valued frequencies (f(2) =
+        % f(nfft-1), f(3) = f(nfft-2), and so forth). For representing the
+        % PSD, we then multiply the power by a factor of two (we add these
+        % together basically). 
+        
+        % The scaling factor works as follows, in order to scale the units
+        % as a density (power per unit) in value of V^2 per Hz. First, the FFT magnitude
+        % must be divided by nfft. This scales the voltages to be within
+        % range of the time-domain voltages (because in the FFT, the
+        % magnitude is a sum over the time window):
+        
+        %                   full(abs(snip))./nfft        The scaled magnitudes
+        
+        % Now, calculate the power:
+        %                   (full(abs(snip))./nfft).^2   The square of the
+        %                                                   magnitude. 
+        
+        % Now, divide by the bin width. This is the resolution, which is
+        % just the samprate/nfft
+        
+        %                   ((full(abs(snip))./nfft).^2).*(1/(samprate/nfft))
+        % =           (full(abs(snip)).^2).*(1/nfft).*(1/nfft).*nfft/samprate
+        % =           (full(abs(snip)).^2).*(1/samprate).*(1/nfft);
+        
+        % This is the correct scaling for the PSD, with units of V^2/Hz
+        % Call this 'x', then just x(2:end-1) = x(2:end-1).*2 to correct
+        % for the negative frequencies which were truncated from the FFT.
+        
+        
+        % Note, if you don't want to scale to voltage, don't use
+        % micconvert! That's fine. The units will be bits^2/Hz, since
+        % sound2sng calculates the FFT from the native samples. For 16 bits
+        % these range from -2^15:2^15-1 (2^16 numbers).
+        
+        
+                     
+        data(i).psd{j} = (1/(samprate*nfft)).*(full(mag.^2));
+        data(i).psd{j}(2:end-1,:) = 2.*data(i).psd{j}(2:end-1,:);
+        data(i).psd{j} = mean(data(i).psd{j},2)';
+        clear fitparams mag;
+        
+        % Estimate dbSPL. This requires knowing the gain setting.
+        if ~exist('gain','var')
+            gain = 1;
+        end
+        wavdata = sng2sound(snips{j});
+        
+        % Check for clipping in each syllable
+        
+        if any(wavdata <= (-2^15)) || any(wavdata >= (2^15-1)) %assumes 16 bit signed integers
+            toclean(j) = 1; % mark syllable to be removed
+            clipped(j) = 1; % mark syllable as clipped
+        end
+        
+        
+        data(i).whisdbsplrms{j} = 20.*log10((rms(wavdata.*micconvert(16,'Pa',gain),nfft,nfft/2,1))./(2E-5));
+        data(i).whisdbsplrmsmean(j) = mean(data(i).whisdbsplrms{j}(~isinf(data(i).whisdbsplrms{j})));
+        data(i).whisdbsplrmssd(j) = std(data(i).whisdbsplrms{j}(~isinf(data(i).whisdbsplrms{j})));
+        clear wavdata;
+        
+    end
+            
+      
+   
+    % QC: Get rid of whistles that 'didn't have' any peak frequency. These
+    % are typically systematic errors in whistimes:
+    
+    cleanIndex = find(toclean);
+    clipIndex = find(clipped);
+    removedsyllables{i} = cleanIndex;
+    clippedsylls{i} = clipIndex;
+    
+    data(i).nwhis = data(i).nwhis - numel(cleanIndex);
+    data(i).twhis(:,cleanIndex) = [];
+    data(i).dt(:,cleanIndex) = [];
+    data(i).peakfreq(:,cleanIndex) = [];
+    data(i).speclines(:,cleanIndex) = [];
+    data(i).numlines(:,cleanIndex) = [];
+    data(i).peakfreqt1t2(:,cleanIndex) = [];
+    data(i).peakdiff(:,cleanIndex) = [];
+    data(i).maxjump(:,cleanIndex) = [];
+    data(i).alljumps(:,cleanIndex) = [];
+    data(i).meanfreq(:,cleanIndex) = [];
+    data(i).medianfreq(:,cleanIndex) = [];
+    data(i).freqrange(:,cleanIndex) = [];
+    data(i).freqsd(:,cleanIndex) = [];
+    data(i).trendslope(:,cleanIndex) = [];
+    data(i).sp(:,cleanIndex) = [];
+    data(i).spmean(:,cleanIndex) = [];
+    data(i).spsd(:,cleanIndex) = [];
+    data(i).psd(:,cleanIndex) = [];
+    data(i).whisdbsplrms(:,cleanIndex) = [];
+    data(i).whisdbsplrmsmean(:,cleanIndex) = [];
+    data(i).whisdbsplrmssd(:,cleanIndex) = [];
+
+    if data(i).nwhis > 1
+    data(i).psdmean = mean(cat(1,data(i).psd{:}));
+    data(i).psdsd = std(cat(1,data(i).psd{:}));
+    elseif data(i).nwhis == 1
+        data(i).psdmean = data(i).psd{1};
+        data(i).psdsd = repmat(NaN,1,nfft/2 + 1);
+    else
+        data(i).psdmean = repmat(NaN,1,nfft/2 + 1);
+        data(i).psdsd = repmat(NaN,1,nfft/2 + 1);
+    end
+    data(i).pause = data(i).twhis(1,2:end) - data(i).twhis(2,1:end-1);  % Pause between syllables
+    twhis(:,cleanIndex) = [];
+    snips(:,cleanIndex) = [];
+    save(['cleaned_',snipss(i).name],'snips');
+    save(['cleaned_',twhiss(i).name],'twhis'); 
+    clear snips twhis;
+    waitbar(i/numel(snipss),h,['Compiling data structure (',num2str((i/numel(snipss))*100),'% done)']);
+    end
+end
+close(h);
+
+% Tell us which ones are clipped:
+
+for i = 1:numel(data)
+    if data(i).nwhis > 0
+        data(i).clipped = zeros(1,data(i).nwhis);
+        if ~isempty(clippedsylls{i})
+            data(i).clipped(clippedsylls{i}) = 1;
+        end
+    end
+end
+
+save('../Vars/data.mat','data');
+save('../Vars/removedsyllables.mat','removedsyllables');
+%% Determine bout structure
+
+% Generate pause histogram and choose pause cutoff:
+cd([rootpath,'\Vars']);
+clearvars -except data;
+close all;
+[h,b] = fdc(log10([data.pause]),'noplot');
+h = h./sum(h);
+N = numel([data.pause]);
+figure;
+plot(b,h);
+xlabel('log10 Pause Length (sec)');
+pauseMax = b(find(h == max(h),1));
+hold on;
+text(pauseMax,h(find(h == max(h),1)),'max');
+x = b(find(h==max(h),1):end);
+y = h(find(h==max(h),1):end);
+[f,gof] = fit(x',y','exp1');
+cvals = coeffvalues(f);
+plot(x,cvals(1).*exp(cvals(2).*x),'red');
+    
+y_testvals = [1/sqrt(N),1/sqrt(N) + (1/N - 1/sqrt(N))/2, 1/N];
+ypred = cvals(1).*exp(cvals(2).*x);
+for i = 1:numel(y_testvals)
+    cutoffsk(i) = find(ypred <= y_testvals(i),1);
+end
+cutoffs = x(cutoffsk);
+for i = 1:numel(cutoffs)
+    text(cutoffs(i), cvals(1)*exp(cvals(2)*cutoffs(i)),[num2str(10^cutoffs(i)),' sec']);
+    hold on;
+    cutoffnames{i} = num2str(roundn(10^cutoffs(i),-2));
+end
+
+
+
+title({'Pause Histogram';...
+    ['Red exp function: ',num2str(cvals(1)),'*exp(',num2str(cvals(2)),'*x)'];...
+    ['R2 = ',num2str(gof.rsquare)];...
+    ['cutoffs = ',cutoffnames{1},',',cutoffnames{2},',',cutoffnames{3},' sec']})
+    
+    
+cutoff = 10^cutoffs(2);
+
+
+
+
+% [h,b] = hist([data.pause],10000);
+% 
+% % Plot pause histogram
+% f = figure;
+% %plot(log10(b),h);
+% bar(log10(b),h);
+% axis([min(log10(b)) max(log10(b)) 0 max(h)*1.25]);  
+% ticklabels = [0.1 0.3 0.5 1.0 5.0 10.0 15.0 30.0 100.0];
+% ticks = log10(ticklabels);
+% set(gca,'XTick',ticks);
+% set(gca,'XTickLabel',ticklabels);
+% xlabel('pause (sec)');
+% titletext = 'Pauses';
+% title({titletext;[num2str(size([data.pause],2)),' pauses']});
+
+
+% Choose a cutoff OLD VERSION
+%test = 0;
+%     while test == 0
+%         % Make the graph interactive for grabbing data:
+%         dcm_obj = datacursormode(f);
+%         set(dcm_obj,'DisplayStyle','window','Enable','on');
+%          
+%         disp('Okiedoke, click on where you want the cutoff.');
+%         pause; % Now wait for the user. You have to make sure to go back to the command window to hit Enter!
+%         % If you hit Enter in the figure window, it saves the threshold you
+%         % clicked and draws the next graph. There should be a way to fix
+%         % this.
+%         cutoff = getCursorInfo(dcm_obj);
+%         cutoff = cutoff.Position(1); 
+%         
+%         
+%         % Now, draw a red line and ask the user if it's ok.
+%         hold on;
+%         l = line([cutoff,cutoff],[0 max(h)*1.25],'Color','red');
+%         
+%         ask = input('Does it look good? Enter 0 for no and 1 for yes: ');
+%         
+%         while ask == 0
+%             w = input('Well, do you want: (1) Move the line based on input, (2) Redraw and click around again?  ');
+%             if w == 1
+%                 cutoff = input('Enter desired cutoff: ');
+%                 cutoff = log10(cutoff);
+%                 delete(l);
+%                 l = line([cutoff,cutoff],[0 max(h)*1.25],'Color','red');
+%                 ask = input('(1) Look good? (0) or not? ');
+%             elseif w == 2
+%                 disp('Okiedoke, click on where you think the threshold is. Then press Enter.');
+%                 pause; % Now wait for the user.
+%                 cutoff = getCursorInfo(dcm_obj);
+%                 cutoff = cutoff.Position(1); 
+%                 delete(l);
+%                 l = line([cutoff,cutoff],[0 max(h)*1.25],'Color','red');
+%                 ask = input('(1) Look good? (0) or not? ');
+%             end
+%         end
+%         
+%         if ask == 1
+%             test = 1;
+%         end
+%         
+%         
+%     end
+save('../Vars/pausecutoff.mat','cutoff','cutoffs');
+clearvars -except data cutoff;
+
+
+%% Calculate bouts based on cutoff.
+
+for n = 1:numel(data)
+        twhis = data(n).twhis;
+        if size(twhis,2) >= 2
+            
+        whis1 = twhis;
+        whis2 = twhis;
+        
+        whis1 = whis1(2,:); % end times of the whistles
+        whis2 = whis2(1,:); % start times of the whistles
+        
+        whis1 = whis1(1:length(whis1)-1); %end times of whistle x
+        whis2 = whis2(2:length(whis2)); %start times of whistle x+1
+        
+        % make a vector of pauses
+           
+        pauses = whis2 - whis1; % pauses(1) means twhis(1,2) - twhis(2,1)
+        
+        boundaries = find(pauses >= cutoff); % these ids correspond to the ids of whis1
+        
+        starts = [1 (boundaries+1)]; % starts go from id 1 in twhis through each id in boundaries +1
+        ends = [boundaries size(twhis,2)]; %ends go from id 1 in boundaries through last id in boundaries
+        
+                
+        boutstarttimes = twhis(1,starts);
+        boutendtimes = twhis(2,ends);
+        whiscounts = ends - starts;
+        whiscounts = whiscounts + 1; % if end is 4 and start is 1, then it will say there are 3 instead of 4.
+                                    % this leaves zeros too, which is
+                                    % evidence of this. So add 1 to all the
+                                    % counts
+        data(n).nbout = length(boutstarttimes);
+        data(n).tbout = [boutstarttimes; boutendtimes];
+        data(n).boutsize = whiscounts;
+        data(n).boutdt = boutendtimes - boutstarttimes;
+        data(n).nsingleton = length(find(whiscounts == 1));
+         
+        clear boutstarttimes boutendtimes whiscounts pauses boundaries starts ends whis1 whis2 twhis;
+        elseif size(twhis,2) == 1
+        data(n).nbout = 1;
+        data(n).tbout = data(n).twhis;
+        data(n).boutsize = 1;
+        data(n).boutdt = data(n).dt;
+        data(n).nsingleton = 1;
+        else
+        data(n).nbout = 0;
+        data(n).tbout = [];
+        data(n).boutsize = NaN;
+        data(n).boutdt = NaN;
+        data(n).nsingleton = 1;
+        end
+end
+save('data.mat','data');
+
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 1
+
+% Plot the histogram of t1 t2 pitch changes. (Pitch defined as peak
+% frequency).
+
+
+t = [data.peakfreqt1t2];
+t = cat(2,t{:})';
+[Z, c] = hist3(t,[100 100]); %makes bivariate histogram with 10,000 bins
+forplot = log10(Z+1); % Rescales to remove log10(0). This way the pseudo-
+                        %color ranges from zero to max as Inf will be ignored.
+
+h = pcolor(c{1}./1000,c{2}./1000,forplot);
+set(h, 'EdgeColor', 'none');
+axis([20 125 20 125]);
+
+% Add colorbar and change labels.
+colorbar('EastOutside','YTick',[0,log10(2),log10(11),log10(101),log10(1001),log10(10001),log10(40001)],'YTickLabel',[0,1,10,1E2,1E3,1E4,4E4]);
+title('Histogram of fundamental frequency jumps.');
+if ~isdir('../Graphs')
+    mkdir('../Graphs');
+end
+ylabel('Peak frequency (kHz) at time t + 1.024 msec');
+xlabel('Peak frequency (kHz) at time t');
+hgsave(h,'../Vars/jumphistogram.fig');
+
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 2
+%Select ROIs.
+disp('Welcome to drawing freehand ROIs over your graph. Hit ENTER to begin');
+pause;
+howmany = input('How many ROIs do you want to make??? ');
+roi = cell(1,howmany);
+for i = 1:howmany
+   
+    if i == 1
+        disp('Ok, first one. On the graph, draw your ROI.');
+    else
+        disp('Ok, next. On the graph, draw your ROI.');
+    end
+    f = impoly;
+    
+    ask = input('Does it look right to you?(1) Or do you want to draw it again?(2)  ');
+    
+while ask == 2
+    delete(f);
+    f = impoly;
+    disp('On the graph, draw your ROI. When you are finished, hit ENTER');
+    ask = input('Does it look right to you?(1) Or do you want to draw it again?(2)  ');
+end
+
+    if ask == 1
+        edges = getPosition(f);
+        edges = edges';
+        roi{i} = edges;
+        clear edges;
+        hold on;
+        plot([roi{i}(1,:) roi{i}(1,1)],[roi{i}(2,:) roi{i}(2,1)],'red','LineWidth',1.5);
+    elseif ask ~= 1 && ask ~= 2
+        ask = input('What was that? ');
+    end
+
+    delete(f);
+    
+end
+
+disp('All your ROI coordinates are stored in the cell array roi. Have a nice day!')
+
+roikey = input('Enter a string where each character is your ROI label : ','s');
+
+save('rois.mat','roi','roikey');
+
+% Make a new plot with polygons labeled on top of graph
+
+hold on;
+for i = 1:length(roi);
+
+    plot([roi{i}(1,:) roi{i}(1,1)],[roi{i}(2,:) roi{i}(2,1)],'red','LineWidth',1.5);
+    
+end
+hgsave('../Vars/jumphistogram_rois.fig');
+clearvars -except data roi roikey;
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 3
+% Classification
+whislabels = cell(1,numel(data));
+for n = 1:numel(data)
+    if data(n).nwhis > 0 && size(data(n).peakfreq,2) > 0
+        for w = 1:data(n).nwhis
+            whislabels{n}{w} = repmat('r',1,size(data(n).peakfreqt1t2{w},2));
+            for j = 1:numel(roi)
+                score = cell(1,2);
+                [score{1},score{2}] = inpolygon(data(n).peakfreqt1t2{w}(1,:)./1000,...
+                                                data(n).peakfreqt1t2{w}(2,:)./1000,...
+                                                roi{j}(1,:),...
+                                                roi{j}(2,:));
+                score = double(score{1})+double(score{2});
+                whislabels{n}{w}(find(score)) = roikey(j);
+                clear score;
+            end
+            if any(whislabels{n}{w} ~= repmat('s',1,size(whislabels{n}{w},2)))
+                whislabels{n}{w} = strrep(whislabels{n}{w},'s','');
+            elseif sum(whislabels{n}{w} == repmat('s',1,size(whislabels{n}{w},2))) == size(whislabels{n}{w},2)
+                whislabels{n}{w} = 's';
+            end
+            if any(whislabels{n}{w} == repmat('r',1,size(whislabels{n}{w},2)))
+                whislabels{n}{w} = 'r';
+            end
+        end        
+    else
+        whislabels{n} = [];
+    end 
+end
+
+save('whislabels.mat','whislabels');
+clearvars -except data whislabels;
+
+%% Classify syllables based off jump histogram(Holy/Guo method) Part 4 
+% Assign whistle types numbers ranked by histogram of types. Group into 10
+% most common types + unique types + Remainder. 'r' will be a common type. We will group
+% this with 'Remainder' later.
+
+x = cat(2,whislabels{:}); % All the syllables.
+[whiscodes, whistypes] = grp2idx(x);
+bins = 1:1:numel(whistypes);
+h = hist(whiscodes',bins);
+[hsort,binidx] = sort(h,'descend');
+hsortnorm = (hsort./sum(hsort)).*100;
+uniquedex = find(hsort == 1);
+topten = whistypes(binidx(1:11));
+toptenh = hsortnorm(1:11);
+rdex = find(strcmp(topten,'r'));
+topten(rdex) = [];
+toptenh(rdex) = [];
+uniques = whistypes(binidx(uniquedex));
+uniqueh = sum(hsortnorm(uniquedex));
+remainder = whistypes(binidx(12:min(uniquedex)-1));
+remainder{end+1} = 'r';
+remainderh = sum(hsortnorm(12:min(uniquedex)-1))+hsortnorm(rdex);
+
+save('whissumary.mat','whiscodes','whistypes','h','bins','topten','toptenh','uniques','uniqueh','remainder','remainderh');
+
+%Final codes:
+
+whisclass(1:10) = topten;
+whisclass(11) = {uniques};
+whisclass(12) = {remainder};
+code = (1:1:12);
+whisclasspercent = [toptenh,uniqueh,remainderh];
+
+clearvars -except data whisclass whisclasspercent;
+save('whisclasses.mat','whisclass','whisclasspercent');
+
+% Ok, now assign the ranked types to the syllables
+load('whislabels.mat');
+
+for n = 1:numel(data)
+    if ~isempty(whislabels{n})
+    for w = 1:numel(whislabels{n});
+       if ~isempty(find(strcmp(whislabels{n}{w},whisclass(1:10))));
+           data(n).whistype(w) = find(strcmp(whislabels{n}{w},whisclass(1:10)));
+       elseif ~isempty(find(strcmp(whislabels{n}{w},whisclass{11})))
+           data(n).whistype(w) = 11;
+       elseif ~isempty(find(strcmp(whislabels{n}{w},whisclass{12})))
+           data(n).whistype(w) = 12;
+       end
+    end
+    else
+        data(n).whistype = NaN;
+    end    
+end
+save('data.mat','data');
+%% Group syllable types to calculate transition probabilities
+clearvars -except data;
+load('pausecutoff.mat');
+% Introduce the '0' type into the string of whistypes. This represents
+% where all the bout boundaries are. This is the 'gap state' for the
+% three-state Markov model from Tim's paper.
+for n = 1:numel(data)
+    if ~isnan(data(n).whistype)
+    data(n).whistypetable = data(n).whistype;
+    data(n).whistypetable(data(n).whistypetable > 1) = 2; % Contain a jump
+    boundaries = find(data(n).pause >= cutoff);
+    % Ok, now the fun part. For every addition of the boundaries, shorten
+    % the boundaries list and add 1;
+    while ~isempty(boundaries)
+        data(n).whistypetable = [data(n).whistypetable(1:boundaries(1)),...
+                                0,...
+                                data(n).whistypetable(boundaries(1)+1:end)];
+        boundaries = boundaries+1;
+        boundaries(1) = [];
+    end
+    
+    % Now, reshape the whistypetable:
+    data(n).whistypetable2seq = [data(n).whistypetable(1:end-1);data(n).whistypetable(2:end)];
+    data(n).whistypetable3seq = [data(n).whistypetable(1:end-2);data(n).whistypetable(2:end-1);data(n).whistypetable(3:end)];
+    
+    end
+    % Works like a charm! Cool!  
+end
+save('data.mat','data');
+%% Calculate Markov Probabilities for 2 away
+clearvars -except data;
+% 2 sequence probability labels:
+
+markovTransitions = {'1-1','1-2','2-1','2-2','1-0','2-0','0-1','0-2'};
+markovTest = [1,1,2,2,1,2,0,0;...
+              1,2,1,2,0,0,1,2];
+
+for i = 1:numel(data)
+    if data(i).nwhis > 2
+        data(i).markov2obs = zeros(1,8);
+        data(i).markov2exp = zeros(1,8);
+        for j = 1:8
+            data(i).markov2obs(j) = numel(find(data(i).whistypetable2seq(1,:) == markovTest(1,j) ...
+                                &  data(i).whistypetable2seq(2,:) == markovTest(2,j))); % observed numbers
+            data(i).markov2exp(j) = ceil((numel(find(data(i).whistypetable == markovTest(1,j)))./numel(data(i).whistypetable))*...
+                                    (numel(find(data(i).whistypetable == markovTest(2,j)))./numel(data(i).whistypetable))*...
+                                      size(data(i).whistypetable2seq,2)); %expected numbers
+        end
+            data(i).markov2chi2 = sum(((data(i).markov2obs - data(i).markov2exp).^2)./data(i).markov2exp);
+            data(i).markov2p = chi2cdf(data(i).markov2chi2,7,'upper');
+    else
+            data(i).markov2obs = NaN(1,8);
+            data(i).markov2exp = NaN(1,8);
+            data(i).markov2chi2 = NaN;
+            data(i).markov2p = NaN;
+    end
+end
+
+save('data.mat','data'); 
+%% Classify whis as just jump or no jump
+load whisclasses.mat;
+k = find(strcmp(whisclass, 's')); %no jumps
+for i = 1:numel(data)
+        data(i).twoclass = data(i).whistype;
+        data(i).twoclass(data(i).twoclass ~= k) = 2;
+        data(i).twoclassN = [numel(find(data(i).twoclass == 1)),numel(find(data(i).twoclass == 2))];
+end
+save('data.mat','data');
+%% Run arriaga anaysis
+
+clear all;
+load data.mat;
+snipss = dir('../Outputs/cleaned_snips*');
+
+nfreq = 257;
+h = waitbar(0,'Processing Arriaga');
+for i = 1:numel(data)
+    load(['../Outputs/',snipss(i).name]);
+    arriagaOutputs(i) = arriaga(data(i).peakfreq,snips,nfreq);
+    clear snips;
+    data(i).arriagaclass = arriagaOutputs(i).class;
+    data(i).arriagaclassN = arriagaOutputs(i).classN;
+    waitbar((i/numel(data)),h,'Processing Arriaga');
+end
+close(h);
+save('arriagaoutput.mat','arriagaOutputs');
+save('data.mat','data');
+
+%% Run enard analysis
+
+clear all;
+load data.mat;
+snipss = dir('../Outputs/cleaned_snips*');
+sngs = dir('../SNGs/*.sng');
+nfft = 512;
+samprate = 250000;
+tres = 0.5*nfft/samprate;
+
+h = waitbar(0,['Enard Classification Running (',num2str(0),' of ',num2str(numel(data)),' processed)']);
+for i = 1:numel(data)
+    load(['../Outputs/',snipss(i).name]);
+    pow = cell(1,numel(snips));
+    for j = 1:numel(snips)
+        pow{j} = abs(full(snips{j})).^2;
+        pow{j} = max(pow{j});
+    end
+    [~,header] = ReadSonogram(['../SNGs/',sngs(i).name]);
+    enardOutputs(i) = enard(data(i).peakfreq,pow,data(i).twhis,header.tacq,tres);
+    clear header snips;
+    waitbar(i/numel(data),h,['Enard Classification Running (',num2str(i),' of ',num2str(numel(data)),' processed)']);
+end
+close(h);
+save('enardoutput.mat','enardOutputs');
+for i = 1:numel(data)
+    data(i).enardclass = enardOutputs(i).class;
+    data(i).enardclassN = zeros(1,4);
+    for j = 1:4
+        data(i).enardclassN(j) = numel(find(data(i).enardclass == j));
+    end
+end
+
+save('data.mat','data');
+    
+    
+
+%% Run scattoni analysis
+clear all;
+load data.mat;
+load inputVariables.mat;
+h = waitbar(0,'Processing Scattoni classification');
+for i = 1:numel(data)
+    for j = 1:data(i).nwhis
+        data(i).scattoniclass(j) = scattoni(data(i).speclines{j},data(i).peakfreq{j},inputVariables(1)/2/inputVariables(4)*1000);
+    end
+    for j = 1:11
+        data(i).scattoniclassN(j) = numel(find(data(i).scattoniclass == j));
+    end
+    waitbar(i/numel(data),h,'Processing Scattoni Classification');
+end
+close(h);
+save('data.mat','data');
+% Note this is still under development.
+
+%% Add filename to data
+
+clear all;
+load data.mat;
+wavs = dir('../WAVs/*.WAV');
+for i = 1:numel(data)
+    data(i).filename = wavs(i).name;
+end
+save('data.mat','data');
+
+%% Add data from Excel spreadsheet
+
+for i = 1:numel(data)
+data(i).genotype = adddata{i,14};
+data(i).sex = adddata{i,9};
+data(i).starttemp = adddata{i,8};
+data(i).weight = adddata{i,10};
+data(i).righting = adddata{i,11};
+data(i).retrieval = adddata{i,12};
+data(i).notes = adddata{i,13};
+data(i).dob = datestr(x2mdate(adddata{i,3}));
+data(i).date = datestr(x2mdate(adddata{i,1}));
+data(i).starttime = datestr(adddata{i,2});
+data(i).litternum = adddata{i,4};
+data(i).mom = adddata{i,5};
+data(i).dad = adddata{i,6};
+data(i).gainset = adddata{i,7};
+end
+
+%% Genotype & number of whistles
+clear all;
+close all;
+load data.mat;
+dayval = input('Which day');
+data = data([data.day]==dayval);
+data = data([data.nwhis] > 5);
+[means,sems,stds,ns] = grpstats([data.nwhis],[data.genotype],{'mean','sem','std','numel'});
+[~,p] = ttest2([data([data.genotype]==1).nwhis],[data([data.genotype]==2).nwhis],0.05,'both');
+pw = ranksum([data([data.genotype]==1).nwhis],[data([data.genotype]==2).nwhis]);
+plevene = vartestn([data.nwhis]',[data.genotype]','off');
+q = qqplot(zscore([data.nwhis]));
+x = get(q,'Xdata');x = x{1};y = get(q,'Ydata');y = y{1};
+close all;clear q;
+[f,gof] = fit(x',y','poly1'); qqr2 = gof.rsquare;cvals = coeffvalues(f);
+qqslope = cvals(1);ypred = x.*cvals(1) + cvals(2);
+[h1,b1] = hist([data([data.genotype]==1).nwhis],25);
+[h2,b2] = hist([data([data.genotype]==2).nwhis],25);
+[h,b] = fdc([data.nwhis],'noplot');
+% Make plot!
+nwhisfig = figure;
+% ------------------------ Distributions -----------------------
+ha(1) = subplot(2,2,1);
+bar(b,h,'black');
+hold on;
+bar(b1,h1,'blue');
+bar(b2,h2,'red');
+ylabel('# of animals');
+xlabel('bin (# of whistles)');
+title('whistle count'); 
+set(ha(1),'XLim',[0 500]);
+% ------------------------ QQPLOT -----------------------
+ha(2) = subplot(2,2,2);
+scatter(x,y,'d','filled');
+hold on;
+plot(x,ypred,'r');
+xlabel('standard normal quantiles');
+ylabel('zscored whistle data quantiles');
+title({'Normality Test: qqplot whistle data',['slope = ',num2str(roundn(qqslope,-2))],...
+    ['Rsquare = ',num2str(roundn(qqr2,-2))]});
+
+% ------------------------ Homoscedasticity  -----------------------
+ha(3) = subplot(2,2,3);
+boxplot([data.nwhis],[data.genotype]);
+set(gca,'XTick',[1,2]);
+set(gca,'XTicklabel',{'nocre','cre'});
+ylabel('number of whistles in three minutes');
+xlabel({['Nocre N = ',num2str(ns(1)),'     Cre N = ',num2str(ns(2))],...
+        ['Nocre mean = ',num2str(roundn(means(1),-1)),'     Cre mean = ',num2str(roundn(means(2),-1))],...
+        ['Nocre stdev = ',num2str(roundn(stds(1),-1)),'     Cre stdev = ',num2str(roundn(stds(2),-1))],...
+        ['   Pooled stdev = ',num2str(roundn(std([data.nwhis]),-1))]});
+
+ title({'Homoscedasticity Test (Levene`s)',...
+        ['p = ',num2str(roundn(plevene,-4))]});
+
+ 
+% ------------------------- Data figure ---------------------------
+ ha(4) = subplot(2,2,4);
+ scatcat([data([data.genotype]==1).nwhis],1,2.2,'b');
+ hold on;
+ semgraph(1.2,means(1),sems(1),'black',0.1);
+ scatcat([data([data.genotype]==2).nwhis],2,2.2,'r');
+ semgraph(2.2,means(2),sems(2),'black',0.1);
+ set(ha(4),'XLim',[0.5 3]);
+ set(gca,'XTick',[1.1,2.2]);
+ set(gca,'XTicklabel',{['Nocre (',num2str(ns(1)),')'],['Cre (',num2str(ns(2)),')']});
+ ylabel('number of whistles in three minutes');
+ title({'Whistle Count: Dat-Cre vs. Control Littermates',...
+        ['p (two-tail t-test) = ',num2str(roundn(p,-4))],...
+        ['p (Mann Whitney) = ',num2str(roundn(pw,-4))]});
+ x = input('Day?');
+ x = ['Day',num2str(x)];
+ print(nwhisfig,'-depsc2',['../Graphs/',x,'_nwhis.eps']);
+ close all;
+ 
+ %% Duration Time
+clear all;
+close all;
+load data.mat;
+dayval = input('Which day');
+data = data([data.day]==dayval);
+data = data([data.nwhis] > 5);
+meandt = arrayfun(@(x)mean(x.dt),data);
+[means,sems,stds,ns] = grpstats(meandt,[data.genotype],{'mean','sem','std','numel'});
+q = qqplot(zscore(meandt));
+x = get(q(1),'XData');
+y = get(q(1),'YData');
+close all;
+clear q;
+[f,gof] = fit(x',y','poly1'); qqr2 = gof.rsquare;cvals = coeffvalues(f);
+qqslope = cvals(1);ypred = x.*cvals(1) + cvals(2);
+[~,p] = ttest2(meandt([data.genotype]==1),meandt([data.genotype]==2),0.05,'both');
+pw = ranksum(meandt([data.genotype]==1),meandt([data.genotype]==2));
+
+
+dtfig = figure;
+ 
+ % Pooled Syllables Distribution
+ ha(1) = subplot(2,3,1);
+ [h,b] = fdc([data.dt],'noplot');
+ h = h./sum(h);
+ h1 = hist([data([data.genotype]==1).dt],b);
+ h1 = h1./sum(h1);
+ h2 = hist([data([data.genotype]==2).dt],b);
+ h2 = h2./sum(h2);
+  box off;
+ bar(b,h,'black');
+ hold on;
+ bar(b,h1,'blue');
+ bar(b,h2,'blue');
+ 
+ % Mean Duration Time by Animal
+ ha(2) = subplot(2,3,2);
+ [h,b] = fdc(meandt,'noplot');
+ h1 = hist(meandt([data.genotype]==1),b);
+ h2 = hist(meandt([data.genotype]==2),b);
+  box off;
+ bar(b,h,'black');
+ hold on;
+ bar(b,h1,'blue');
+ bar(b,h2,'blue');
+ 
+ % QQ Plot/ Normality test
+ha(3) = subplot(2,3,3);
+scatter(x,y,'d','filled','blue');
+box off;
+hold on;
+plot(x,ypred,'red');
+xlabel('standard normal quantiles');
+ylabel('zscored average whistle duration quantiles');
+title({'Normality Test: qqplot whistle data',['slope = ',num2str(roundn(qqslope,-2))],...
+    ['Rsquare = ',num2str(roundn(qqr2,-2))]});
+
+
+% ------------------------ Homoscedasticity  -----------------------
+plevene = vartestn(meandt',[data.genotype]','off');
+ha(4) = subplot(2,3,4);
+boxplot(meandt,[data.genotype]);
+set(gca,'XTick',[1,2]);
+set(gca,'XTicklabel',{'nocre','cre'});
+ylabel('mean duration time (sec)');
+xlabel({['Nocre N = ',num2str(ns(1)),'     Cre N = ',num2str(ns(2))],...
+        ['Nocre mean = ',num2str(roundn(means(1),-4)),'     Cre mean = ',num2str(roundn(means(2),-4))],...
+        ['Nocre stdev = ',num2str(roundn(stds(1),-4)),'     Cre stdev = ',num2str(roundn(stds(2),-4))],...
+        ['   Pooled stdev = ',num2str(roundn(std(meandt),-4))]});
+
+ title({'Homoscedasticity Test (Levene`s)',...
+        ['p = ',num2str(roundn(plevene,-4))]});
+
+ 
+% ------------------------- Data figure ---------------------------
+ ha(5) = subplot(2,3,5);
+ scatcat(meandt([data.genotype]==1),1,2.2,'b');
+ hold on;
+ semgraph(1.2,means(1),sems(1),'black',0.1);
+ scatcat(meandt([data.genotype]==2),2,2.2,'r');
+ semgraph(2.2,means(2),sems(2),'black',0.1);
+ set(ha(5),'XLim',[0.5 3]);
+ set(gca,'XTick',[1.1,2.2]);
+ set(gca,'XTicklabel',{['Nocre (',num2str(ns(1)),')'],['Cre (',num2str(ns(2)),')']});
+ ylabel('mean duration time (sec)');
+ title({'Mean Duration Time: Dat-Cre vs. Control Littermates',...
+        ['p (two-tail t-test) = ',num2str(roundn(p,-4))],...
+        ['p (Mann Whitney) = ',num2str(roundn(pw,-4))]});
+ x = input('Day?');
+ x = ['Day',num2str(x)];
+ print(dtfig,'-depsc2',['../Graphs/',x,'_dt.eps']);
+ close all;
+ 
+ 
+ %% Spectral Power
+clear all;
+close all;
+load data.mat;
+dayval = input('Which day');
+data = data([data.day]==dayval);
+data = data([data.nwhis] > 5);
+fres = 250000/512; 
+psds = {data.powmean};
+psds = cat(1,psds{:});
+ncols = size(psds,2);
+
+psds1 = psds([data.genotype]==1,:);
+psds2 = psds([data.genotype]==2,:);
+freq = linspace(0,125,257);
+mns = NaN(1,257);
+mns1 = NaN(1,257);
+mns2 = NaN(1,257);
+sems = NaN(1,257);
+sems1 = NaN(1,257);
+sems2 = NaN(1,257);
+
+for i = 1:ncols
+ x0 = psds(:,i);
+ x0 = x0(find(~isinf(x0)));
+ if ~isempty(x0)
+ mns(i) = mean(x0);
+ sems(i) = std(x0)./sqrt(length(x0));
+ end
+ x1 = psds1(:,i);
+ x1 = x1(find(~isinf(x1)));
+ if ~isempty(x1)
+ mns1(i) = mean(x1);
+ sems1(i) = std(x1)./sqrt(length(x1));
+ end
+ x2 = psds2(:,i);
+ x2 = x2(find(~isinf(x2)));     
+ if ~isempty(x2)
+ mns2(i) = mean(x2);
+ sems2(i) = std(x2)./sqrt(length(x2));
+ end
+end
+
+sems = [mns - sems; mns+sems];
+sems1 = [mns1 - sems1; mns1 + sems1];
+sems2 = [mns2 - sems2; mns2 + sems2];
+
+% Calculate Spectral Discontinuity. Reference in WTmean
+normpsds = zeros(size(psds,1),size(psds,2));
+for i = 1:size(psds,1)
+    normpsds(i,:) = (10.^data(i).powmean)./sum(10.^data(i).powmean);
+end
+
+ref = mean(normpsds);
+sdiscont = zeros(1,size(psds,1));
+for i = 1:size(psds,1)
+    sdiscont(i) = sum(abs(normpsds(i,:) - ref));
+end
+
+% Calculate stats for sdiscont
+[sdmeans,sdsems,sdstds,sdns] = grpstats(sdiscont,[data.genotype],{'mean','sem','std','numel'});
+q = qqplot(zscore(sdiscont));
+x = get(q(1),'XData');
+y = get(q(1),'YData');
+close all;
+clear q;
+[f,gof] = fit(x',y','poly1'); qqr2 = gof.rsquare;cvals = coeffvalues(f);
+qqslope = cvals(1);ypred = x.*cvals(1) + cvals(2);
+[~,p] = ttest2(sdiscont([data.genotype]==1),sdiscont([data.genotype]==2),0.05,'both');
+pw = ranksum(sdiscont([data.genotype]==1),sdiscont([data.genotype]==2));
+plevene = vartestn(sdiscont',[data.genotype]','off');
+
+% Data Figures
+pwspec = figure;
+
+% Spectra for all, Nocre & Cre animals, with standard error bars----------
+ha(1) = subplot(2,3,1);
+hold on; box off;
+plot(freq,mns,'black');
+plot([freq;freq],sems,'black');
+plot(freq,mns1,'blue');
+plot([freq;freq],sems1,'blue');
+plot(freq,mns2,'red');
+plot([freq;freq],sems2,'red');
+xlabel('Frequency (kHz), res 488.3 Hz');
+ylabel('Power level (dbV)');
+title('Power Spectra');
+
+% Distribution of spectral discontinuity ----------------------------------
+ha(2) = subplot(2,3,2);
+[h,b] = fdc(sdiscont,'noplot');
+h1 = hist(sdiscont([data.genotype]==1),b);
+h2 = hist(sdiscont([data.genotype]==2),b);
+box off;
+bar(b,h,'black');
+hold on;
+bar(b,h1,'blue');
+bar(b,h2,'blue');
+title('Spectral Discontinuity (ref Nocre mn)');
+
+% Normality Test Sdiscont--------------------------------------------------
+ha(3) = subplot(2,3,3);
+scatter(x,y,'d','filled','blue');
+box off;
+hold on;
+plot(x,ypred,'red');
+xlabel('standard normal quantiles');
+ylabel('zscored spec discont quantiles');
+title({'Normality Test: qqplot spec discont ',['slope = ',num2str(roundn(qqslope,-2))],...
+    ['Rsquare = ',num2str(roundn(qqr2,-2))]});
+
+% Homoscedasticity test----------------------------------------------------
+
+ha(4) = subplot(2,3,4);
+boxplot(sdiscont,[data.genotype]);
+set(gca,'XTick',[1,2]);
+set(gca,'XTicklabel',{'nocre','cre'});
+set(gca,'YLim',[0 2]);
+ylabel('spectral discontinuity to nocre mn');
+xlabel({['Nocre N = ',num2str(sdns(1)),'     Cre N = ',num2str(sdns(2))],...
+        ['Nocre mean = ',num2str(roundn(sdmeans(1),-1)),'     Cre mean = ',num2str(roundn(sdmeans(2),-1))],...
+        ['Nocre stdev = ',num2str(roundn(sdstds(1),-1)),'     Cre stdev = ',num2str(roundn(sdstds(2),-1))],...
+        ['   Pooled stdev = ',num2str(roundn(std(sdiscont),-1))]});
+
+ title({'Homoscedasticity Test (Levene`s)',...
+        ['p = ',num2str(roundn(plevene,-4))]});
+    
+ % ------------------------- Data figure ---------------------------
+ ha(5) = subplot(2,3,5);
+ scatcat(sdiscont([data.genotype]==1),1,2.2,'b');
+ hold on;
+ semgraph(1.2,sdmeans(1),sdsems(1),'black',0.1);
+ scatcat(sdiscont([data.genotype]==2),2,2.2,'r');
+ semgraph(2.2,sdmeans(2),sdsems(2),'black',0.1);
+ set(ha(5),'XLim',[0.5 3]);
+ set(gca,'XTick',[1.1,2.2]);
+ set(gca,'XTicklabel',{['Nocre (',num2str(sdns(1)),')'],['Cre (',num2str(sdns(2)),')']});
+ set(gca,'YLim',[0 2]);
+ ylabel('spectral discontinuity to nocre mn');
+ title({'Spectral Discontinuity: Dat-Cre vs. Control Littermates, Ref Control Mean',...
+        ['p (two-tail t-test) = ',num2str(roundn(p,-4))],...
+        ['p (Mann Whitney) = ',num2str(roundn(pw,-4))]});
+ 
+ %--------------- Print ---------------
+ x = input('Day?');
+ x = ['Day',num2str(x)];
+ print(pwspec,'-depsc2',['../Graphs/',x,'_sdiscont.eps']);
+ close all;
+
+ 
+  %% Intrabout pause
+clear all;
+close all;
+load data.mat;
+data = data([data.nwhis] > 5);
+load pausecutoff.mat;
+meandt = arrayfun(@(x)mean(x.pause(x.pause<cutoff)),data);
+[means,sems,stds,ns] = grpstats(meandt,[data.genotype],{'mean','sem','std','numel'});
+q = qqplot(zscore(meandt));
+x = get(q(1),'XData');
+y = get(q(1),'YData');
+close all;
+clear q;
+[f,gof] = fit(x',y','poly1'); qqr2 = gof.rsquare;cvals = coeffvalues(f);
+qqslope = cvals(1);ypred = x.*cvals(1) + cvals(2);
+[~,p] = ttest2(meandt([data.genotype]==1),meandt([data.genotype]==2),0.05,'both');
+pw = ranksum(meandt([data.genotype]==1),meandt([data.genotype]==2));
+
+
+dtfig = figure;
+ 
+ % Pooled Syllables Distribution
+ ha(1) = subplot(2,3,1);
+ [h,b] = fdc([data.dt],'noplot');
+ h = h./sum(h);
+ h1 = hist([data([data.genotype]==1).dt],b);
+ h1 = h1./sum(h1);
+ h2 = hist([data([data.genotype]==2).dt],b);
+ h2 = h2./sum(h2);
+  box off;
+ bar(b,h,'black');
+ hold on;
+ bar(b,h1,'blue');
+ bar(b,h2,'blue');
+ 
+ % Mean Duration Time by Animal
+ ha(2) = subplot(2,3,2);
+ [h,b] = fdc(meandt,'noplot');
+ h1 = hist(meandt([data.genotype]==1),b);
+ h2 = hist(meandt([data.genotype]==2),b);
+  box off;
+ bar(b,h,'black');
+ hold on;
+ bar(b,h1,'blue');
+ bar(b,h2,'blue');
+ 
+ % QQ Plot/ Normality test
+ha(3) = subplot(2,3,3);
+scatter(x,y,'d','filled','blue');
+box off;
+hold on;
+plot(x,ypred,'red');
+xlabel('standard normal quantiles');
+ylabel('zscored average whistle duration quantiles');
+title({'Normality Test: qqplot whistle data',['slope = ',num2str(roundn(qqslope,-2))],...
+    ['Rsquare = ',num2str(roundn(qqr2,-2))]});
+
+
+% ------------------------ Homoscedasticity  -----------------------
+plevene = vartestn(meandt',[data.genotype]','off');
+ha(4) = subplot(2,3,4);
+boxplot(meandt,[data.genotype]);
+set(gca,'XTick',[1,2]);
+set(gca,'XTicklabel',{'nocre','cre'});
+ylabel('mean duration time (sec)');
+xlabel({['Nocre N = ',num2str(ns(1)),'     Cre N = ',num2str(ns(2))],...
+        ['Nocre mean = ',num2str(roundn(means(1),-4)),'     Cre mean = ',num2str(roundn(means(2),-4))],...
+        ['Nocre stdev = ',num2str(roundn(stds(1),-4)),'     Cre stdev = ',num2str(roundn(stds(2),-4))],...
+        ['   Pooled stdev = ',num2str(roundn(std(meandt),-4))]});
+
+ title({'Homoscedasticity Test (Levene`s)',...
+        ['p = ',num2str(roundn(plevene,-4))]});
+
+ 
+% ------------------------- Data figure ---------------------------
+ ha(5) = subplot(2,3,5);
+ scatcat(meandt([data.genotype]==1),1,2.2,'b');
+ hold on;
+ semgraph(1.2,means(1),sems(1),'black',0.1);
+ scatcat(meandt([data.genotype]==2),2,2.2,'r');
+ semgraph(2.2,means(2),sems(2),'black',0.1);
+ set(ha(5),'XLim',[0.5 3]);
+ set(gca,'XTick',[1.1,2.2]);
+ set(gca,'XTicklabel',{['Nocre (',num2str(ns(1)),')'],['Cre (',num2str(ns(2)),')']});
+ ylabel('mean duration time (sec)');
+ title({'Mean Duration Time: Dat-Cre vs. Control Littermates',...
+        ['p (two-tail t-test) = ',num2str(roundn(p,-4))],...
+        ['p (Mann Whitney) = ',num2str(roundn(pw,-4))]});
+ x = input('Day?');
+ x = ['Day',num2str(x)];
+ print(dtfig,'-depsc2',['../Graphs/',x,'_dt.eps']);
+ close all;
+ 
+ %% Correlation to other metrics: weight, time to right, time to retrieve
+ 

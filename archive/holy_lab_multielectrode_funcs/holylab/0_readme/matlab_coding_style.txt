@@ -1,0 +1,69 @@
+
+
+
+###############################################################################
+
+This document is designed to share and standardlize the matlab .m & .cpp mex 
+code coding style for Holy lab. 
+
+This appendant matlab coding style guide includes the coding style added or
+prefered by Holy lab in addition to the outstanding matlab style described in
+"0_MatlabStyle1p5.pdf", which is also included for your convenience.
+
+Please follow the matlab coding style described in "0_MatlabStyle1p5.pdf"
+and this document in your future work.
+
+You are welcomed to add your preferences into this guide.
+
+###############################################################################
+
+Beta version of coding style:
+
+1. *.m (coding style related to *.m file)
+
+1.1 To avoid too much "whitespace churn" in the code tree, please set
+your Matlab editor settings in the following way:
+
+Under File->Preferences->Editor/Debugger->Tab, please use:
+  Tab Size: 2
+  Indent Size: 2
+  check "Tab key inserts spaces"
+
+Under File->Preferences->Editor/Debugger->Language, please set
+"Function indenting format" to "indent all functions".
+
+1.2 The length of each line should be less than 80 characters
+
+For most function call, it can be continued on a new line using the 
+continuation sign "...". 
+
+In File->Preferences->Editor/Debugger->Display, check "show line" option
+in "Right hand text limit", set "displacement" to 80 and "width" to 1.
+This will display a vertical line in code editor to show the 80 character
+limit.
+
+1.3 (some style description here and example)
+
+
+
+
+
+
+
+###############################################################################
+
+2. *.c / *.cpp (coding style related related to *.c / *.cpp file)
+
+2.1 Debugging mex c++ code using Valgrind
+Install Valgrind first and then compile the mex C++ code with -g flag.
+Start debug this just compiled mex executable using the following command,
+
+matlab -nojvm -nosplash -r "your_matlab_function(yourParams)" 
+-D"valgrind --error-limit=no --tool=memcheck -v --log-file=valgrind.log" 
+
+2.2
+ 
+
+
+ 
+

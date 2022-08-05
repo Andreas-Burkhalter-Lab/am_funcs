@@ -1,0 +1,21 @@
+function varargout = imagesc(varargin)
+% VIMAGE/IMAGESC: evaluates & plots a vimage
+%
+% This has the same syntax as the built-in IMAGESC command.
+%
+% See also: IMAGESC, IMAGE.
+
+% Copyright 2005 by Timothy E. Holy
+  
+  v = varargin;
+  for i = 1:length(v)
+    if isa(v{i},'vimage')
+      v{i} = eval(v{i});
+    end
+  end
+  % Now we have all the values we need, we can execute the function
+  if (nargout > 0)
+    [varargout{:}] = feval('imagesc',v{:});
+  else
+    feval('imagesc',v{:});
+  end

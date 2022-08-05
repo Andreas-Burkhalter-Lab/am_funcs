@@ -1,0 +1,8 @@
+Moving towards consistent variable names:
+mz: a vector of m/z values
+mzi: a vector of m/z indices
+Imzis: intensity matrix, I(mzi,scan#)
+Imzit: intensity matrix, I(mzi,tindex)  (interpolated to evenly-spaced times)
+Ismzi: intensity matrix, I(scan#,mzi)
+Imzi: intensity vector, I(mz)
+Is: intensity vector, I(scan#)

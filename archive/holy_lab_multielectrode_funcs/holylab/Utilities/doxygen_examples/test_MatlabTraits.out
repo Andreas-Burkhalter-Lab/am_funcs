@@ -1,0 +1,10 @@
+float = single
+It's complex
+complexity string is complex
+complex data type is int16
+
+This next should succeed:
+Function finished without errors
+
+This next should fail:
+./test_MatlabTraits: Input is not of type complex double.

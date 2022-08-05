@@ -1,0 +1,26 @@
+mplayimphys:
+A toolbar toggle button to toggle useSelframes
+Fix the don't-show-last-frame-in-movie bug
+
+ROI drawing, see design.txt
+
+Performance increase:
+vimage allocation can be a big bottleneck, at least in 'fake' mode (accounted for ~25% of total computation time).  Could go to an STL-like method where containers are allocated with a bit of room left over, and whenever they fill up they double in size all at once.  Would have to introduce a VIMAGE_NEXT global & re-write all of the code which cares about the length of the VIMAGE list.  I don't think such a change would be all that bad, but perhaps it's not necessary, since it's a small part of any "real" processing.
+Other bottlenecks: size, imclass, and MATLAB's builtin load & save functionality.  I tested to see whether MATLAB can load and save the VIMAGE_LIST faster if you first convert it to a pure structure, but that doesn't seem to be the case.
+
+
+New files added by Jason:
+delete_roi_defs
+get_roi
+set_roi
+get_roi_shared_fields
+split_roi_defs
+manipulate_rois
+merge_roi_defs
+plot_valve_transition
+
+
+It looks like roidraw is not used---delete?
+
+May want to change roistruct to separate tforms from ROIs, so that time and space are separately handled. But it would be easier to leave things as-is....
+

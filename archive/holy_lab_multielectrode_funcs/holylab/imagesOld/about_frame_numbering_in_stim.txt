@@ -1,0 +1,21 @@
+$Id$
+
+About the frame numbering in stimulus sequence encoded in the header
+(".txt" accompanying the raw acquisition file):
+
+1. the number is 0-based, that is, the 1st frame is "frame 0"
+
+2. if stimulus timing is: v t, that means right after "frame t",
+   "valve v" is opened. That is, "frame t+1" is the first frame
+   that has stimulus v. In another word, the (t+2)nd frame is
+   the first frame has stimlus v.
+   The reason for this inconvenient numbering is that we try
+   to avoid valve change during acquiring a frame.
+
+
+imphysfrom2d parses this stimulus information so that the 'stimulus'
+field in the imphys structure contains the valve number open at the
+time of image acquisition.
+
+Obviously, since MATLAB is unit-offset, once you create an imphys
+structure, the first frame is indexed by 1, not zero.

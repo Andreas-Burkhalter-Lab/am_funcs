@@ -1,0 +1,32 @@
+
+CUDA code naming style (beta)
+
+
+New cuda accelerated mex code should be named basing on the corresponding
+cpu mex code, if there are, by attaching a '_cuda' suffix. 
+For example, for the existing mex code,
+	register_mismatch_nancorr.m
+the corresponding cuda accelerated code is named as
+	register_mismatch_nancorr_cuda.cu
+where .cu is the cuda file extension.
+Also the new cuda code should be placed in a sub-folder named 'cuda'.
+
+For brand new cuda mex code, it should be named following the
+	do_some_thing_cuda.cu
+style.
+
+
+In Nvidia cuda runtime API, all the cuda runtime functions are named with 
+'cuda' prefix, like
+	cudaDoSomeThing( ).
+For this reason, all the newly created cuda accelerated functions which are
+used to handle cuda/gpu related computation, should be declared as
+	cuda_do_some_thing()
+so as to distinguish them.
+
+Variables:
+
+device variable starts with d_
+host variable starts with h_
+
+

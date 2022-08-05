@@ -1,0 +1,35 @@
+$Id$
+
+About the frame/stack numbering in stimulus sequence encoded in the header
+(".txt" accompanying the raw acquisition file by Calcim
+and ".imagine" by Imagine):
+
+1. the number is 0-based, that is, the 1st frame is "frame 0" for Calcim,
+   and the first stack is "stack 0" for Imagine.
+
+2. For Calcim:
+      if stimulus timing is: v t, that means right after "frame t",
+      "valve v" is opened. That is, "frame t+1" is the first frame
+      that has stimulus v. In another word, the (t+2)nd frame is
+      the first frame has stimlus v.
+      The reason for this inconvenient numbering is that we try
+      to avoid valve change during acquiring a frame.
+
+      imphysfrom2d parses this stimulus information so that the 'stimulus'
+      field in the imphys structure contains the valve number open at the
+      time of image acquisition.
+
+   For Imagine:
+      if stimlulus timing is: v s, that means right after "stack s-1",
+      "valve v" is opened. That is, "stack s" is the first stack
+      that has "valve v". In another word, the (s+1)st stack is
+      the first stack has valve v.
+      The reason for this change from Calcim to Imagine is that we feel
+      the way in Imagine is more natural when designing stimulus sequence.
+
+      Matlab func imagine_stim_lookup() parses the header and returns
+      the open valve for each stack, which hides the confusing details of
+      stack numbering.
+
+3. Obviously, since MATLAB is unit-offset, once you create an imphys
+   structure, the first frame is indexed by 1, not zero.

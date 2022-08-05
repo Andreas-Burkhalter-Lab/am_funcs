@@ -1,0 +1,763 @@
+%% Set several variables which will be used again and again:
+rootpath = pwd;
+if ~isempty(findstr(rootpath,'WAVs'))
+    cd ..;
+    rootpath = pwd;
+end
+
+
+
+prompt = {'FFT size: ', ...
+          'From Frequency (Hz):',...
+          'To Frequency (Hz):',...
+          'Sample Rate (Hz):',...
+          'Minimum Syllable Size (seconds):',...
+          'Minimum Syllable Mean Frequency (kHz):', ...
+          'Minimum Spectral Purity:',...
+          'Maximum Spectral Discontinuity:',...
+          'Gain setting:',...
+          'Convert to PSD to Voltage Units? (1 - Yes, 0 - No):',...
+          'Minimum FFT Signal Height Above Baseline For Analysis (in sigma units)',...
+          'Sample Length for FFT Baseline Calculation (seconds):'};
+          
+dlgtitle = 'Set Start Up Variables';
+defAns = {'512','25000','125000','250000','0.005','35000','0.20','1','3','1','5','30'};
+inputVariables = inputdlg(prompt,dlgtitle,1,defAns);
+inputVariables = str2double(inputVariables);
+if ~isdir('./Vars')
+    mkdir('./Vars');
+end
+save('./Vars/inputVariables.mat','inputVariables','prompt','rootpath');
+
+%% Determine Threshold
+
+% Be in WAVs directory
+cd([rootpath,'\WAVs']);
+a = dir('*.WAV');
+n = numel(a);
+thresholdType = ...
+inputdlg({'Use automatic(1) or manual(2) thresholds?'},'Spectrogram Threshold',1,{'1'});
+thresholdType = str2double(thresholdType);
+
+threshold = zeros(n,1);
+
+if thresholdType == 1
+    w = waitbar(0,'Automatic FFT baseline calculation...');
+    for i = 1:n
+        Y = sngthreshold2(a(i).name,inputVariables(1),inputVariables(4),inputVariables(12),inputVariables(6));
+        Y = Y(:);
+        Y = log10(Y);
+        Y = Y(~isinf(Y));
+        signalStats.noise(i) = mean(Y);
+        signalStats.sigma(i) = std(Y);
+        threshold(i) = signalStats.noise(i) + 3*signalStats.sigma(i);
+        waitbar(i/n,w,'Automatic FFT baseline calculation...');
+    end
+    close(w);
+elseif thresholdType == 2 % Manual threshold picking
+    fileVals = cell(1,n);
+    for i = 1:n
+     Y = sngthreshold2(a(i).name,inputVariables(1),inputVariables(4),inputVariables(12),inputVariables(6));
+     Y = Y(:);
+     logY = log10(Y);
+     logY = logY(find(~isinf(logY)));
+     signalStats.noise(i) = mean(Y);
+     signalStats.sigma(i) = std(Y);
+     plot(logY);
+     hold on;
+     ask = 2;
+     while ask == 2
+        if exist('threshLine','var')
+            delete(threshLine);
+        end
+        w = warndlg('Use the measure tool to pick a value from the graph');
+        waitfor(w);
+        fileVals(i) = inputdlg({'Enter the threshold value'},'Spectrogram Threshold',1,{'0'});
+        threshLine = plot([1,length(logY)],[str2double(fileVals{i}),str2double(fileVals{i})],'r');
+        askText = inputdlg({'I`ve drawn a line. Do you like it? (1) Yes or (2) No?'},'Spectrogram Threshold',1,{'1'});
+        ask = str2double(askText);
+     end
+     clear threshLine;
+     close all;
+    end
+    threshold = str2double(fileVals);
+end
+
+
+save('../Vars/thresholds.mat','threshold','signalStats');
+
+%% Make Sonograms
+cd([rootpath,'\WAVs']);
+wavs = dir('*.WAV');
+h = waitbar(0,'Calculating sonograms');
+sngparms = struct('threshold',0,'plot',0,'progressbar',0,'freqrange',...
+    [inputVariables(2),inputVariables(3)],'nfreq',inputVariables(1)/2,...
+    'voltageMin',-(2^15),'voltageMax',(2^15 - 1));
+clipt = cell(1,numel(wavs));
+for i = 1:numel(wavs)
+    sngparms.threshold = 10.^threshold(i);
+    k = find(wavs(i).name == '.');
+    k = k(end);
+    outfilename = [wavs(i).name(1:k-1),'.SNG'];
+    clipt{i} = sound2sng(wavs(i).name,sngparms,...
+        outfilename);
+    waitbar(i/numel(wavs),h);
+end
+
+if ~isdir('../SNGs')
+    mkdir('../SNGs');
+end
+fclose('all');
+close(h);
+movefile('*.SNG','../SNGs/');
+save('../Vars/clipt.mat','clipt');
+
+%% Run whistimes
+clearvars -except inputVariables rootpath
+cd([rootpath,'\SNGs']);
+whistimesoptions = whistimesdefaults;
+whistimesoptions.durationthresh = inputVariables(5);
+whistimesoptions.meanfreqthresh = inputVariables(6);
+whistimesoptions.puritythresh = inputVariables(7);
+whistimesoptions.specdiscthresh = inputVariables(8);
+a = dir('*.SNG');
+h = waitbar(0,'Calculating whistimes (0% done)');
+for n = 1:numel(a)
+    [twhis,~,snips] = whistimes(a(n).name, whistimesoptions);
+    save(['twhis',a(n).name,'.mat'],'twhis');
+    save(['snips',a(n).name,'.mat'],'snips');
+    waitbar(n/numel(a),h,['Calculating whistimes (',num2str((n/numel(a))*100),'% done)']); 
+end
+close(h);
+if ~isdir('../Outputs')
+    mkdir('../Outputs');
+end
+fclose('all');
+movefile('*.mat','../Outputs/');
+save('../Vars/whistimesoptions.mat','whistimesoptions');
+
+%% Spot check and make sure the syllables are being called correctly:
+% Be in the Outputs directory
+cd([rootpath,'\Outputs']);
+twhiss = dir('twhis*');
+sngs = dir('../SNGs/*.SNG');
+howmany = inputdlg('How many sonograms to spot check? (Type `Inf` for all) ','Sonogram Spot check',1,{'2'});
+howmany = str2double(howmany);
+if howmany == Inf
+    howmany = numel(sngs);
+end
+
+for i = 1:howmany
+    if howmany < numel(sngs)
+        k = randsample(numel(sngs),1);
+    elseif howmany == 0
+        break;
+    elseif howmany == numel(sngs)
+        k = i;
+    end
+    load(twhiss(k).name);
+    whistimesplot(['../SNGs/',sngs(k).name],[],twhis);
+    h = warndlg('Ok, have fun, and click OK when you`re done!');
+    waitfor(h);
+    close all hidden force;
+end
+
+%% Compile the full data structure
+clearvars -except inputVariables rootpath;
+cd([rootpath,'\Outputs']);
+twhiss = dir('twhis*');
+snipss = dir('snips*');
+wavs = dir('../WAVs/*.WAV');
+load('../Vars/thresholds.mat');
+load('../Vars/clipt.mat');
+nfft = inputVariables(1);         % Change these if different!
+samprate = inputVariables(4);  % Change these if different!
+gain = inputVariables(9);           % Change if different!
+convertVoltage = inputVariables(10); % Change to false to leave as native bits! This is really only the case for collabs with non dougherty lab. We keep track of gain here.
+f = linspace(0,samprate/2,nfft/2 + 1);
+data(numel(snipss)).nwhis = [];
+removedsyllables = cell(1,numel(snipss));
+clippedsylls = cell(1,numel(snipss));
+h = waitbar(0,'Compiling data structure (0% done)');
+
+
+fileGainsdir = dir([rootpath,'\Vars\fileGains.mat']);
+if ~isempty(fileGainsdir)
+    load([rootpath,'\Vars\fileGains.mat']);
+end
+
+for i = 1:numel(snipss)
+
+    load(twhiss(i).name);
+    load(snipss(i).name);
+    %scale = 10^(signalStats.noise(i) + inputVariables(11)*signalStats.sigma(i));
+    scale = (signalStats.noise(i) + inputVariables(11)*signalStats.sigma(i))/threshold(i); % fold change in log over threshold
+    % signal must be >= scale for analysis: 5sigma rule. 
+    % for separate gains
+    if exist('fileGains','var')
+        gain = fileGains(i);
+    end
+    data(i).filename = wavs(i).name;
+    data(i).nwhis = size(twhis,2);                      % Number of syllables: This is just the number of columns in twhis
+    if data(i).nwhis > 0
+    data(i).twhis = twhis;                              % Syllable start and end times
+    data(i).dt = twhis(2,:) - twhis(1,:) ;              % Duration (end - start)
+    
+    data(i).peakfreq = cell(1,data(i).nwhis);           % Peak frequency
+    data(i).speclines = cell(1,data(i).nwhis);          % Lines in the spectrum
+    toclean = zeros(1,data(i).nwhis);
+    clipped = zeros(1,data(i).nwhis);
+    for j = 1:data(i).nwhis
+        
+        [data(i).speclines{j},data(i).numlines(j),data(i).peakfreq{j}] = ...
+            syllablelines2(snips{j},10^threshold(i),scale,f);
+            
+        k = find(data(i).peakfreq{j} == 0);  
+        m = find(data(i).peakfreq{j});
+        if ~isempty(k) && ~isempty(m)
+          for t = 1:numel(k)
+            dist = abs(m - k(t));                                    % Subtract index of value-containing entries from the zero entry
+            dist = m(find(dist == min(dist(dist>0)),1));             % Index of value containing entries closest. This is usual 1 away but could be more in the case of multiple zeros.
+            data(i).peakfreq{j}(k(t)) = data(i).peakfreq{j}(dist);   % Average these closest value(s) and replace the zero.
+          end
+        elseif isempty(m);
+            toclean(j) = 1;                                         % mark this syllable to get removed. This occurs if no max is above scale*threshold;
+        end
+        
+        data(i).peakfreqt1t2{j} = [data(i).peakfreq{j}(1:end-1);data(i).peakfreq{j}(2:end)]; % For the jump histogram for Tim's classification method.
+        data(i).peakdiff{j} = diff(data(i).peakfreq{j});
+        data(i).maxjump(j) = max(abs(data(i).peakdiff{j}));                                  % Max jump.
+        data(i).alljumps{j} = zeros(1,12);
+        % This is Terra's recommendation that I look at jumps of different
+        % sizes. In this case:
+        % >=500,1000,5000,10000,15000,20000,250000,30000,35000,40000,45000,50000
+            jumps = [500,1000,5000,10000,15000,20000,25000,30000,35000,40000,45000,50000];
+            for t = 1:12
+                data(i).alljumps{j}(t) = numel(find(data(i).peakdiff{j} >= jumps(t)));
+            end
+        
+            
+            
+        % Ok great. Now calculate various other statistics. This stuff is
+        % from my old iterations of this code.
+        data(i).meanfreq(j) = mean(data(i).peakfreq{j});                            % Mean fundamental.
+        
+        data(i).medianfreq(j) = median(data(i).peakfreq{j});                        % Median fundamental
+        
+        data(i).freqrange(j) = max(data(i).peakfreq{j}) - min(data(i).peakfreq{j}); % The bandwidth
+        
+        data(i).freqsd(j) = std(data(i).peakfreq{j});                               % The standard deviation, in Hz.
+        % Calculate a trend slope
+        fitparams = polyfit((0:size(data(i).peakfreq{j},2)-1).*(nfft/2/samprate*1000),...  % time in milliseconds    
+                                        data(i).peakfreq{j},...                            % f in Hz.
+                                        1);                                                % Linear calc.
+        data(i).trendslope(j) = fitparams(1);                                              % Slope. Forget intercept.
+        
+        
+        % Convert to Volts just for the PSD below. This is unnecessary for sp. 
+        % but scaling to voltage units is useful for a formal PSD.
+        % Uncomment one of the following lines if you do or don't want to
+        % scale.
+        mag = full(abs(snips{j}));
+        if convertVoltage == true
+            mag = mag.*micconvert(16,'V',gain);                                                                                    
+        end
+             
+        [totPower,maxPower] = specpurity(mag.^2);                                          
+        data(i).sp{j} = maxPower./totPower;
+        data(i).spmean(j) = mean(data(i).sp{j});
+        data(i).spsd(j) = std(data(i).sp{j});
+        
+        
+        % Calculate the PSD
+        psd = (1/(samprate*nfft)).*(mag.^2);
+        psd(2:end-1,:) = 2.*psd(2:end-1,:);
+        fres = samprate/nfft;
+        % Time average the PSD
+        data(i).avpow{j} = mean(psd.*fres,2)';
+        data(i).dbpow{j} = 10.*log10(data(i).avpow{j}); % determine power in dbV. Should not contain any Infs because 0s were set to threshold
+        clear fitparams mag;
+        
+        % Estimate dbSPL. This requires knowing the gain setting.
+        if ~exist('gain','var')
+            gain = 1;
+        end
+        wavdata = sng2sound(snips{j});
+        
+        % Check for clipping in each syllable
+        
+        if any(wavdata <= (-2^15)) || any(wavdata >= (2^15-1)) %assumes 16 bit signed integers
+            toclean(j) = 1; % mark syllable to be removed
+            clipped(j) = 1; % mark syllable as clipped
+        end
+        
+        
+        data(i).whisdbsplrms{j} = 20.*log10((rms(wavdata.*micconvert(16,'Pa',gain),nfft,nfft/2,1))./(2E-5));
+        data(i).whisdbsplrmsmean(j) = mean(data(i).whisdbsplrms{j}(~isinf(data(i).whisdbsplrms{j})));
+        data(i).whisdbsplrmssd(j) = std(data(i).whisdbsplrms{j}(~isinf(data(i).whisdbsplrms{j})));
+        clear wavdata;
+        
+    end
+            
+      
+   
+    % QC: Get rid of whistles that 'didn't have' any peak frequency. These
+    % are typically systematic errors in whistimes:
+    
+    cleanIndex = find(toclean);
+    clipIndex = find(clipped);
+    removedsyllables{i} = cleanIndex;
+    clippedsylls{i} = clipIndex;
+    
+    data(i).nwhis = data(i).nwhis - numel(cleanIndex);
+    data(i).twhis(:,cleanIndex) = [];
+    data(i).dt(:,cleanIndex) = [];
+    data(i).peakfreq(:,cleanIndex) = [];
+    data(i).speclines(:,cleanIndex) = [];
+    data(i).numlines(:,cleanIndex) = [];
+    data(i).peakfreqt1t2(:,cleanIndex) = [];
+    data(i).peakdiff(:,cleanIndex) = [];
+    data(i).maxjump(:,cleanIndex) = [];
+    data(i).alljumps(:,cleanIndex) = [];
+    data(i).meanfreq(:,cleanIndex) = [];
+    data(i).medianfreq(:,cleanIndex) = [];
+    data(i).freqrange(:,cleanIndex) = [];
+    data(i).freqsd(:,cleanIndex) = [];
+    data(i).trendslope(:,cleanIndex) = [];
+    data(i).sp(:,cleanIndex) = [];
+    data(i).spmean(:,cleanIndex) = [];
+    data(i).spsd(:,cleanIndex) = [];
+    data(i).avpow(:,cleanIndex) = [];
+    data(i).dbpow(:,cleanIndex) = [];
+    data(i).whisdbsplrms(:,cleanIndex) = [];
+    data(i).whisdbsplrmsmean(:,cleanIndex) = [];
+    data(i).whisdbsplrmssd(:,cleanIndex) = [];
+
+    if data(i).nwhis > 1
+    data(i).powmean = mean(cat(1,data(i).dbpow{:}));
+    data(i).powsd = std(cat(1,data(i).dbpow{:}));
+    elseif data(i).nwhis == 1
+        data(i).powmean = data(i).dbpow{1};
+        data(i).powsd = repmat(NaN,1,nfft/2 + 1);
+    else
+        data(i).powmean = repmat(NaN,1,nfft/2 + 1);
+        data(i).powsd = repmat(NaN,1,nfft/2 + 1);
+    end
+    data(i).pause = data(i).twhis(1,2:end) - data(i).twhis(2,1:end-1);  % Pause between syllables
+    twhis(:,cleanIndex) = [];
+    snips(:,cleanIndex) = [];
+    save(['cleaned_',snipss(i).name],'snips');
+    save(['cleaned_',twhiss(i).name],'twhis'); 
+    clear snips twhis;
+    waitbar(i/numel(snipss),h,['Compiling data structure (',num2str((i/numel(snipss))*100),'% done)']);
+    end
+end
+close(h);
+
+% Tell us which ones are clipped:
+
+for i = 1:numel(data)
+    if data(i).nwhis > 0
+        data(i).clipped = zeros(1,data(i).nwhis);
+        if ~isempty(clippedsylls{i})
+            data(i).clipped(clippedsylls{i}) = 1;
+        end
+        if ~isempty(clipt{i})
+        for j = 1:numel(clipt{i})
+            [~,k] = find(data(i).twhis(1,:) <= clipt{i}(j) & data(i).twhis(2,:) > clipt{i}(j));
+            if ~isempty(k)
+                data(i).clipped(k) = 1;
+            end
+        end
+        end
+    end
+end
+
+save('../Vars/data.mat','data');
+save('../Vars/removedsyllables.mat','removedsyllables');
+
+%% Determine bout structure
+
+% Generate pause histogram and choose pause cutoff:
+cd([rootpath,'\Vars']);
+clearvars -except data;
+close all;
+[h,b] = fdc(log10([data.pause]),'noplot');
+h = h./sum(h);
+N = numel([data.pause]);
+figure;
+plot(b,h);
+xlabel('log10 Pause Length (sec)');
+pauseMax = b(find(h == max(h),1));
+hold on;
+text(pauseMax,h(find(h == max(h),1)),'max');
+x = b(find(h==max(h),1):end);
+y = h(find(h==max(h),1):end);
+[f,gof] = fit(x',y','exp1');
+cvals = coeffvalues(f);
+plot(x,cvals(1).*exp(cvals(2).*x),'red');
+    
+y_testvals = [1/sqrt(N),1/sqrt(N) + (1/N - 1/sqrt(N))/2, 1/N];
+ypred = cvals(1).*exp(cvals(2).*x);
+for i = 1:numel(y_testvals)
+    cutoffsk(i) = find(ypred <= y_testvals(i),1);
+end
+cutoffs = x(cutoffsk);
+for i = 1:numel(cutoffs)
+    text(cutoffs(i), cvals(1)*exp(cvals(2)*cutoffs(i)),[num2str(10^cutoffs(i)),' sec']);
+    hold on;
+    cutoffnames{i} = num2str(roundn(10^cutoffs(i),-2));
+end
+
+
+
+title({'Pause Histogram';...
+    ['Red exp function: ',num2str(cvals(1)),'*exp(',num2str(cvals(2)),'*x)'];...
+    ['R2 = ',num2str(gof.rsquare)];...
+    ['cutoffs = ',cutoffnames{1},',',cutoffnames{2},',',cutoffnames{3},' sec']})
+    
+hgsave('pausecutoffs.fig');
+close all;
+
+cutoff = 10^cutoffs(2);
+save('../Vars/pausecutoff.mat','cutoff','cutoffs');
+clearvars -except data cutoff;
+
+waiting = waitbar(0,['Segmenting bouts using cut-off value of ',num2str(cutoff),' sec']);
+for n = 1:numel(data)
+        twhis = data(n).twhis;
+        if size(twhis,2) >= 2
+            
+        whis1 = twhis;
+        whis2 = twhis;
+        
+        whis1 = whis1(2,:); % end times of the whistles
+        whis2 = whis2(1,:); % start times of the whistles
+        
+        whis1 = whis1(1:length(whis1)-1); %end times of whistle x
+        whis2 = whis2(2:length(whis2)); %start times of whistle x+1
+        
+        % make a vector of pauses
+           
+        pauses = whis2 - whis1; % pauses(1) means twhis(1,2) - twhis(2,1)
+        
+        boundaries = find(pauses >= cutoff); % these ids correspond to the ids of whis1
+        
+        starts = [1 (boundaries+1)]; % starts go from id 1 in twhis through each id in boundaries +1
+        ends = [boundaries size(twhis,2)]; %ends go from id 1 in boundaries through last id in boundaries
+        
+                
+        boutstarttimes = twhis(1,starts);
+        boutendtimes = twhis(2,ends);
+        whiscounts = ends - starts;
+        whiscounts = whiscounts + 1; % if end is 4 and start is 1, then it will say there are 3 instead of 4.
+                                    % this leaves zeros too, which is
+                                    % evidence of this. So add 1 to all the
+                                    % counts
+        data(n).nbout = length(boutstarttimes);
+        data(n).tbout = [boutstarttimes; boutendtimes];
+        data(n).boutsize = whiscounts;
+        data(n).boutdt = boutendtimes - boutstarttimes;
+        data(n).nsingleton = length(find(whiscounts == 1));
+         
+        clear boutstarttimes boutendtimes whiscounts pauses boundaries starts ends whis1 whis2 twhis;
+        elseif size(twhis,2) == 1
+        data(n).nbout = 1;
+        data(n).tbout = data(n).twhis;
+        data(n).boutsize = 1;
+        data(n).boutdt = data(n).dt;
+        data(n).nsingleton = 1;
+        else
+        data(n).nbout = 0;
+        data(n).tbout = [];
+        data(n).boutsize = NaN;
+        data(n).boutdt = NaN;
+        data(n).nsingleton = 1;
+        end
+        waitbar(n/numel(data),waiting,['Segmenting bouts using cut-off value of ',num2str(cutoff),' sec']);
+end
+save('data.mat','data');
+close(waiting);
+
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 1
+
+% Plot the histogram of t1 t2 pitch changes. (Pitch defined as peak
+% frequency).
+
+
+t = [data.peakfreqt1t2];
+t = cat(2,t{:})';
+[Z, c] = hist3(t,[100 100]); %makes bivariate histogram with 10,000 bins
+forplot = log10(Z+1); % Rescales to remove log10(0). This way the pseudo-
+                        %color ranges from zero to max as Inf will be ignored.
+
+h = pcolor(c{1}./1000,c{2}./1000,forplot);
+set(h, 'EdgeColor', 'none');
+axis([20 125 20 125]);
+
+% Add colorbar and change labels.
+colorbar('EastOutside','YTick',[0,log10(2),log10(11),log10(101),log10(1001),log10(10001),log10(40001)],'YTickLabel',[0,1,10,1E2,1E3,1E4,4E4]);
+title('Histogram of fundamental frequency jumps.');
+if ~isdir('../Graphs')
+    mkdir('../Graphs');
+end
+ylabel('Peak frequency (kHz) at time t + 1.024 msec');
+xlabel('Peak frequency (kHz) at time t');
+hgsave(h,'../Vars/jumphistogram.fig');
+
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 2
+%Select ROIs.
+warnbox = warndlg('Welcome to drawing freehand ROIs over your graph. Click OK to begin');
+waitfor(warnbox);
+howmany = inputdlg('ROIs do you want to make???','Holy/Guo Classification',1,{'3'});
+howmany = str2double(howmany);
+roi = cell(1,howmany);
+for i = 1:howmany
+   
+    if i == 1
+        warnbox = warndlg('Ok, first one. On the graph, draw your ROI.');
+        waitfor(warnbox);
+    else
+        warnbox = warndlg('Ok, next. On the graph, draw your ROI.');
+        waitfor(warnbox);
+    end
+    f = impoly;
+    
+    ask = inputdlg('Does it look right to you?(1) Or do you want to draw it again?(2)  ',...
+        'Holy/Guo Classification',1,{'1'});
+    ask = str2double(ask);
+    
+while ask == 2
+    delete(f);
+    f = impoly;
+    warnbox = warndlg('On the graph, draw your ROI. When you are finished, click OK');
+    waitfor(warnbox);
+    ask = inputdlg('Does it look right to you?(1) Or do you want to draw it again?(2)  ',...
+        'Holy/Guo Classification',1,{'1'});
+    ask = str2double(ask);
+end
+
+    if ask == 1
+        edges = getPosition(f);
+        edges = edges';
+        roi{i} = edges;
+        clear edges;
+        hold on;
+        plot([roi{i}(1,:) roi{i}(1,1)],[roi{i}(2,:) roi{i}(2,1)],'red','LineWidth',1.5);
+    elseif ask ~= 1 && ask ~= 2
+        ask = inputdlg('Sorry, I didn`t get that. Does it look right to you?(1) Or do you want to draw it again?(2)  ',...
+        'Holy/Guo Classification',1,{'1'});
+    ask = str2double(ask);
+    end
+
+    delete(f);
+    
+end
+
+warnbox = warndlg('All your ROI coordinates are stored in the cell array roi. Have a nice day!');
+waitfor(warnbox);
+roikey = inputdlg('Enter a string where each character is your ROI label : ','ROI Labels',1,{'usd'});
+roikey = roikey{1};
+save('rois.mat','roi','roikey');
+
+% Make a new plot with polygons labeled on top of graph
+
+hold on;
+for i = 1:length(roi);
+
+    plot([roi{i}(1,:) roi{i}(1,1)],[roi{i}(2,:) roi{i}(2,1)],'red','LineWidth',1.5);
+    
+end
+hgsave('../Vars/jumphistogram_rois.fig');
+clearvars -except data roi roikey;
+close all hidden force;
+
+%% Classify syllables based off of jump histogram (Holy/Guo method) Part 3
+% Classification
+whislabels = cell(1,numel(data));
+for n = 1:numel(data)
+    if data(n).nwhis > 0 && size(data(n).peakfreq,2) > 0
+        for w = 1:data(n).nwhis
+            whislabels{n}{w} = repmat('r',1,size(data(n).peakfreqt1t2{w},2));
+            for j = 1:numel(roi)
+                score = cell(1,2);
+                [score{1},score{2}] = inpolygon(data(n).peakfreqt1t2{w}(1,:)./1000,...
+                                                data(n).peakfreqt1t2{w}(2,:)./1000,...
+                                                roi{j}(1,:),...
+                                                roi{j}(2,:));
+                score = double(score{1})+double(score{2});
+                whislabels{n}{w}(find(score)) = roikey(j);
+                clear score;
+            end
+            if any(whislabels{n}{w} ~= repmat('s',1,size(whislabels{n}{w},2)))
+                whislabels{n}{w} = strrep(whislabels{n}{w},'s','');
+            elseif sum(whislabels{n}{w} == repmat('s',1,size(whislabels{n}{w},2))) == size(whislabels{n}{w},2)
+                whislabels{n}{w} = 's';
+            end
+            if any(whislabels{n}{w} == repmat('r',1,size(whislabels{n}{w},2)))
+                whislabels{n}{w} = 'r';
+            end
+        end        
+    else
+        whislabels{n} = [];
+    end 
+end
+
+save('whislabels.mat','whislabels');
+clearvars -except data whislabels;
+
+%% Classify syllables based off jump histogram(Holy/Guo method) Part 4 
+% Assign whistle types numbers ranked by histogram of types. Group into 10
+% most common types + unique types + Remainder. 'r' will be a common type. We will group
+% this with 'Remainder' later.
+
+x = cat(2,whislabels{:}); % All the syllables.
+[whiscodes, whistypes] = grp2idx(x);
+bins = 1:1:numel(whistypes);
+h = hist(whiscodes',bins);
+[hsort,binidx] = sort(h,'descend');
+hsortnorm = (hsort./sum(hsort)).*100;
+uniquedex = find(hsort == 1);
+notuniquedex = find(hsort > 1);
+topten = whistypes(binidx(notuniquedex));
+if length(topten) > 11
+    topten = topten(1:11);
+end
+toptenh = hsortnorm(notuniquedex);
+if length(toptenh) > 10
+    toptenh = toptenh(1:11);
+end
+rdex = find(strcmp(topten,'r'));
+topten(rdex) = [];
+toptenh(rdex) = [];
+uniques = whistypes(binidx(uniquedex));
+uniqueh = sum(hsortnorm(uniquedex));
+if length(notuniquedex) > 11
+    remainder = whistypes(binidx(notuniquedex(12:end)));
+    remainder{end+1} = 'r';
+    remainderh = sum(hsortnorm(notuniquedex(12:end)) + hsortnorm(rdex));
+else
+    remainder = {'r'};
+    remainderh = hsortnorm(rdex);
+end
+
+
+save('whissumary.mat','whiscodes','whistypes','h','bins','topten','toptenh','uniques','uniqueh','remainder','remainderh');
+
+%Final codes:
+
+whisclass = [topten',{uniques},{remainder}];
+code = 1:numel(whisclass);
+whisclasspercent = [toptenh,uniqueh,remainderh];
+
+clearvars -except data whisclass whisclasspercent;
+save('whisclasses.mat','whisclass','whisclasspercent');
+
+% Ok, now assign the ranked types to the syllables
+load('whislabels.mat');
+waiting = waitbar(0,'Classifying syllables...');
+for n = 1:numel(data)
+    if ~isempty(whislabels{n})
+    for w = 1:numel(whislabels{n});
+       if ~isempty(find(strcmp(whislabels{n}{w},whisclass(1:end-2))));
+           data(n).whistype(w) = find(strcmp(whislabels{n}{w},whisclass(1:end-2)));
+       elseif ~isempty(find(strcmp(whislabels{n}{w},whisclass{end-1})))
+           data(n).whistype(w) = 11;
+       elseif ~isempty(find(strcmp(whislabels{n}{w},whisclass{end})))
+           data(n).whistype(w) = 12;
+       end
+    end
+    else
+        data(n).whistype = NaN;
+    end    
+ waitbar(n/numel(data),waiting,'Classifying syllables...');
+end
+close(waiting);
+save('data.mat','data');
+%% Group syllable types to calculate transition probabilities
+clearvars -except data;
+load('pausecutoff.mat');
+% Introduce the '0' type into the string of whistypes. This represents
+% where all the bout boundaries are. This is the 'gap state' for the
+% three-state Markov model from Tim's paper.
+waiting = waitbar(0,'Calculating Transition Probabilities Table...');
+for n = 1:numel(data)
+    if ~isnan(data(n).whistype)
+    data(n).whistypetable = data(n).whistype;
+    data(n).whistypetable(data(n).whistypetable > 1) = 2; % Contain a jump
+    boundaries = find(data(n).pause >= cutoff);
+    % Ok, now the fun part. For every addition of the boundaries, shorten
+    % the boundaries list and add 1;
+    while ~isempty(boundaries)
+        data(n).whistypetable = [data(n).whistypetable(1:boundaries(1)),...
+                                0,...
+                                data(n).whistypetable(boundaries(1)+1:end)];
+        boundaries = boundaries+1;
+        boundaries(1) = [];
+    end
+    
+    % Now, reshape the whistypetable:
+    data(n).whistypetable2seq = [data(n).whistypetable(1:end-1);data(n).whistypetable(2:end)];
+    data(n).whistypetable3seq = [data(n).whistypetable(1:end-2);data(n).whistypetable(2:end-1);data(n).whistypetable(3:end)];
+    
+    end
+    % Works like a charm! Cool! 
+    waitbar(n/numel(data),waiting,'Calculating Transition Probabilities Table...');
+end
+close(waiting);
+save('data.mat','data');
+%% Calculate Markov Probabilities for 2 away
+clearvars -except data;
+% 2 sequence probability labels:
+
+markovTransitions = {'1-1','1-2','2-1','2-2','1-0','2-0','0-1','0-2'};
+markovTest = [1,1,2,2,1,2,0,0;...
+              1,2,1,2,0,0,1,2];
+waiting = waitbar(0,'Calculating Chi^2 for Markov Model...');
+for i = 1:numel(data)
+    if data(i).nwhis > 2
+        data(i).markov2obs = zeros(1,8);
+        data(i).markov2exp = zeros(1,8);
+        for j = 1:8
+            data(i).markov2obs(j) = numel(find(data(i).whistypetable2seq(1,:) == markovTest(1,j) ...
+                                &  data(i).whistypetable2seq(2,:) == markovTest(2,j))); % observed numbers
+            data(i).markov2exp(j) = ceil((numel(find(data(i).whistypetable == markovTest(1,j)))./numel(data(i).whistypetable))*...
+                                    (numel(find(data(i).whistypetable == markovTest(2,j)))./numel(data(i).whistypetable))*...
+                                      size(data(i).whistypetable2seq,2)); %expected numbers
+        end
+            data(i).markov2chi2 = sum(((data(i).markov2obs - data(i).markov2exp).^2)./data(i).markov2exp);
+            data(i).markov2p = chi2cdf(data(i).markov2chi2,7,'upper');
+    else
+            data(i).markov2obs = NaN(1,8);
+            data(i).markov2exp = NaN(1,8);
+            data(i).markov2chi2 = NaN;
+            data(i).markov2p = NaN;
+    end
+    waitbar(i/numel(data),waiting,'Calculating Chi^2 for Markov Model...');
+end
+close(waiting);
+save('data.mat','data'); 
+%% Classify whis as just jump or no jump
+load whisclasses.mat;
+k = find(strcmp(whisclass, 's')); %no jumps
+waiting = waitbar(0,'Reclassifying as 1 (no pitch jump) or 2 (pitch jump)');
+for i = 1:numel(data)
+        data(i).twoclass = data(i).whistype;
+        data(i).twoclass(data(i).twoclass ~= k) = 2;
+        data(i).twoclassN = [numel(find(data(i).twoclass == 1)),numel(find(data(i).twoclass == 2))];
+        waitbar(i/numel(data),waiting,'Reclassifying as 1 (no pitch jump) or 2 (pitch jump)');
+end
+close(waiting);
+save('data.mat','data');
+
+%%
+clearvars -except data;
+s = inputdlg('Import metadata from a file?','Metadata Import',1,{'1'});
+s = str2double(s);
+if s == 1
+    data = vocMetadata(data);
+    save('data.mat','data');
+    warndlg('Your data are now stored in data.mat. Thank you, your data were enjoyable.');
+else
+    warndlg('Your data are now stored in data.mat. Thank you, your data were enjoyable.');
+end

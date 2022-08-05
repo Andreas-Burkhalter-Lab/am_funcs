@@ -1,0 +1,50 @@
+function xout = meanshift1d(xin,thresh)
+% MEANSHIFT1D: cluster points in one dimension by mean-shift algorithm
+% Given an input set of points xin, each point is iteratively moved to the
+% center of mass of all points within a given distance of that point.
+% When points converge to a final position, the algorithm terminates.
+%
+% Syntax:
+%   xout = meanshift1d(xin,thresh)
+% where
+%   xin is a vector containing the initial set of locations;
+%   thresh is the distance threshold to define the "local neighborhood";
+% and
+%   xout is a vector containing the final locations; the point starting
+%     at xin(j) moves to xout(j).
+%
+% This uses the full point-movement algorithm; it's O(N^2) if your
+% threshold is large enough that much of the sample is encompased, but
+% smaller thresholds result in O(N) behavior.
+%
+% See also: RMEANS.
+  
+% Copyright 2005 by Timothy E. Holy
+  npts = length(xin);
+  [sx,sxindx] = sort(xin);
+  sx = sx(:)';
+  sxo = zeros(size(sx));
+  doneflag = 0;
+  % Iterate until points have stopped moving
+  while ~doneflag
+    for i = 1:npts
+      left = i; right = i;
+      % Move right boundary as far as possible
+      while (right < npts && sx(right+1)-sx(i) < thresh)
+        right = right+1;
+      end
+      % Move left boundary
+      while (left > 1 && sx(i) - sx(left-1) < thresh)
+        left = left-1;
+      end
+      sxo(i) = sum(sx(left:right))/(right-left+1);
+    end
+    doneflag = all(sx == sxo);
+    fprintf('%g\n',sum(abs(sx-sxo)))
+    sx = sxo;
+  end
+  % Now return in the original order
+  [ssxi,invindx] = sort(sxindx);
+  xout = sx(invindx);
+  xout = reshape(xout,size(xin));
+  

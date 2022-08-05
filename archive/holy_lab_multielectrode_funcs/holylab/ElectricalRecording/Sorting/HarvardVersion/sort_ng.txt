@@ -1,0 +1,108 @@
+Next-generation spike sorting:
+1. Base it on the ephys suite, so that
+   a) Stimulus info may be available at time of sorting
+   b) Subranging and subchannelling can be supported (breaks within files at times of discontinuity, etc.)
+   c) All the nasty indexing is done in callable functions, rather than as part of the GUI (helpful for debugging & optimization, as well as making code more modular)
+2. Make it "re-entrant," so
+   a) can pick up previous work on sorting and further refine it (or look at it)
+   b) undo/redo functionality
+   c) use output from automatic sorting as a starting point (or at least look at results of auto sorting)
+3. Clean up GUI. Give more feedback (e.g., distribution of threshold-crossing amplitudes, so can easily see if a cell is truncated by the threshold in snippeting), make GUI non-blocking, etc.
+
+Big issues:
+Is it time to handle multi-channel spike waveforms? If so, how? [Load raw data from .merec files (using channels + times info)?  Or stick with what's in .ssnp files?]  TEH assessment: wait until this becomes an issue.
+Automated spike sorting?  TEH assessment: prepare the way to implement this as a "plug-in" (as well as having it give a "head start" on sorting)
+Measures of quality? (See document on refractory periods)  TEH assessment: some of this can be done now.
+
+Small issues:
+How should discontinuities in time (e.g., animal moves during recording) be handled?  TEH assessment: handle these as entirely separate at sorting time, and then have a separate utility to match cell numbers
+Need (?) some syntax to specify whether we want to work on particular cellnums, or whether all spikes on input channel should be treated. TEH assessment: nope, this is really an issue that needs tackling only with multichannel sorting.
+
+The plan for getting there:
+Don't handle any of the difficult issues yet, esp. multi-channel waveforms.
+Dump as much of the bookkeeping into ephys routines.
+Start by implementing the single-channel sorting based on ephys. Structure:
+  1. Call it with an ephys structure array (subchanned to a single channel), perhaps with celltimes info already specified (this makes it re-entrant) and a filename/fid for saving the results (this file will be used for intermediate saves)
+  2. Store input data in figure data
+  3. Set up GUI
+But what about the "LoopChannels" equivalent?  Need to have some pseudo-blocking version that allows you to go on to next channel?  Or should the output file be polled? [Not likely]  Or should one simply not worry about it, and just have a "next channel" button?  Or build the channel looping into the main program?  [seems bad, except it might work well with MATLAB's limitations]
+
+A necessary step:
+A new file format for sorted data, see below.
+
+Ephys utilities:
+ephysmerge (or some similar): merge across splits in time (e.g., so that you can recover after breaking spikes up into blocks of 5000 waveforms) and (?) across cell numbers
+ephysfetch: read a new sorting file format.  Mechanism for looking at only part of a sorting file (so sorting file doesn't have to be processed in its entirety).  Mechanism for selecting a particular version of sorting (undo/redo functionality).  Will perhaps/probably also have to call ephysmerge?
+ephyssortwrite: write new sorting file format.
+
+Auxillary utilities:
+File-"splitter": examine files for moments of discontinuity (useful for Rebecca's prep). Probably a GUI.
+File-"merger": match cell numbers across discontinuities. Probably a GUI. TEH _thinks_ this should be separate from the main sorting program, but worth discussing.
+Sort file clean up to discard intermediate saves (always retain the last save? Or something more complicated?)
+
+Sorting file format:
+Consist of a series of blocks with sorting information about a particular ssnp file, channel or perhaps cell number.  Note that the same ssnp file may appear in multiple blocks; different scanranges or cellnums may occupy different blocks.  Information read later from the file replaces earlier info, when they overlap, or even better there needs to be a way to select which version one likes (for implementing undo/redo).
+
+Detailed format of a block (working draft):
+
+1. file position of next block (to allow rapid skips over data)
+
+2. Information in plain text (perhaps with "date=" fields):
+date (of recording, not analysis---this helps to uniquely identify the data file)
+time (")
+ssnp filename (the final piece needed to identify data file)
+scanrange (of this block)
+cellnums
+cellchandef (semicolon separators between cellnums?)
+savedate & savetime (the date/time at which this block was written)
+comment (So user can say "experimental sorting #3" and "best sort" and "Cell 2 looks funny")
+quality measures?
+number of spiketimes per cell
+
+
+3. Information in binary format:
+celltimes
+
+
+
+
+
+
+
+
+
+Notes on meeting from 2005-01-18:
+1. A new field needs to be added to ephys: cellscanrange. For each cell, this is a n-by-2 matrix giving scanranges for which the cell is reliably defined. ephys analysis tools should check this field and make proper use of it in raster plots, PSTHs, etc.
+This is not a small change, but it's important.
+
+Do we need to also have a chanscanrange, for unsorted data, or is this not necessary in practice? (Comments, Francesco?)
+
+2. Time markers should be set-able while spike sorting, but the details remain to be worked out.
+
+3. Ability to go back and forth between "sorting" views and stimulus response analysis is strongly desired. Interaction with stimulus info is needed during sorting.
+
+4. UI changes:
+  a) Add an "info" field to the ephysgui context menu, to show cell & channel number (if nothing else). Or perhaps display this info somewhere by default? Does this info need to appear on printouts?
+   b) Increase time resolution on "spikes/file" and make it time-based.
+   c) "Include remainder" button while clustering
+   d) Scrolling to handle more clusters
+   e) Some investigation is needed of the color-coding in spike overlay plots.
+   
+5. A discussion of save/revert functionality was started but not concluded for lack of time.
+
+
+
+There seems to have been another meeting for which I can't find my notes. Will check at home.
+
+
+Notes on meeting from 2005-01-26:
+1. New "reconstruct" plotting method (works like setspimg in Graphics): plot a colored line from minimum to maximum of each snippet until the "zoom" on an axis is such that the width of snippets is larger than 1 pixel. To do this efficiently, we need to change snippetfile to save this min/max data for each snippet (takes too long to calculate).
+This should make reconstructions vastly more efficient, both in time and in terms of memory requirements.
+
+2. Cell numbers are assigned manully during clustering through a context menu and/or a keyboard shortcut.
+
+3. Time breaks are just visual markers during sorting, but different types of time markers can be used to set file or cell breaks to be used upon analysis.
+
+4. Desire for an automatic purgatory, spikes not sent to a bin don't get sent to "unassigned" unless the unassigned bin was included in the sort.
+
+5. Have both a "trash" bin as well as an unsorted bin. When spikes are sent to the trash, the view updates immediately in terms of the axis limits (to allow the user to get rid of junk which obscures the ability to see the interesting stuff).

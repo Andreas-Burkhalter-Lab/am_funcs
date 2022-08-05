@@ -1,0 +1,32 @@
+echo line is of format:
+notation = matlab_expression
+
+where notation is francesco's stimulus notation (i.e. valve labels);
+matlab_expression is matlab expressions which will be eval-ed. 
+The resulting variable "stim" has the stimulus info.
+If a field is missing, the default value is:
+    category: urine_whole
+    concentration: 1
+    conc_unit: 'fold'
+    duration: NaN
+    user_tag: ''
+    strain: 'Balb/cJ'
+    sex: 'F'
+    procedure: ''
+
+note that field 'identity' must be there.
+
+There are two additional functions to supply different defaults:
+stimdefaults_ud_francesco: for urine-derived (ud) stimuli
+stimdefaults_syn_francesco: for synthetic (syn) stimuli
+
+When multiple tubes of the "same thing" are used (e.g., Ringer's1 and
+Ringer's2), indicate the '1' or '2' in the user_tag field and save the
+identity field for it's nominal identity (which for Ringer's is simply
+'', given the category 'negative_control').
+
+A question: is having a 'peptide' category useful?  If so, would it
+only be used in cases where the peptide sequence is the name (e.g.,
+'SYFPEITHI'), or would it also be used for others (e.g., ESP1)?  Or
+might 'synthetic_compound' cover everything? Right now 'peptide' is
+being used for all peptides.

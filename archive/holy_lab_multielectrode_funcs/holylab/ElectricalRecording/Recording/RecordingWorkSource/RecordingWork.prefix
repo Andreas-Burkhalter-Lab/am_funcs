@@ -1,0 +1,17 @@
+/* 
+ * Prefix file for the Metrowerks CodeWarrior compiler.
+ *	There are no command line options.
+ */
+
+/* $Revision$ */
+
+#define MATLAB_MEX_FILE
+
+#ifndef rez
+/* Both Rez and the C Compiler use this file.  Put any C specific
+ * code within ifndef rez..endif clauses, such as here.
+ */
+
+#endif
+
+#define NDEBUG 
