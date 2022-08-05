@@ -11,14 +11,20 @@
 pars = vardefault('pars',struct);
 
 %% get pars, set defaults
-pars.minAreaPatch_squm = field_default(pars,'minAreaPatch_squm',0);  % min area in square microns a blob must contain to be considered a patch
+% min area in square microns a blob must contain to be considered a patch
+pars.minAreaPatch_squm = field_default(pars,'minAreaPatch_squm',0);  
 %     minAreaPatch_squm = 236; % 236 seems best for subject 09060 for replicating patch density values from ji et al 2015 (patches top 2/6 quantiles)
-pars.maxAreaPatch_squm = field_default(pars,'maxAreaPatch_squm',inf);
+
+% break up patches that are larger than this size in square microns
+pars.maxAreaPatch_squm = field_default(pars,'maxAreaPatch_squm',inf); 
 % pars.maxAreaPatch_squm = field_default(pars,'maxAreaPatch_squm',7000);
 % pars.maxAreaPatch_squm = field_default(pars,'maxAreaPatch_squm',2300);% 2300 seems best for subject 09060 for replicating patch density values from ji et al 2015
+
 pars.blur_using_only_roi = field_default(pars,'blur_using_only_roi',1); % if true, do not use non-roi pixels for blurring (should==1 if image has zeros/nans outside roi, such as for blood vessels/image borders)  
-pars.diskblurradius_um = field_default(pars,'diskblurradius_um',29);
-pars.threshMode = field_default(pars,'threshMode','intensityQuantiles');
+pars.diskblurradius_um = field_default(pars,'diskblurradius_um',29); % radius in microns of circular averaging filter
+
+% choose method for picking the intensity threshold
+pars.threshMode = field_default(pars,'threshMode','intensityQuantiles'); % divide pixels in discreet quantiles based on intensity
     pars.nQuantiles = field_default(pars,'nQuantiles',6); % number of intensity levels to divide image into (if using 'intensityQuantiles')
     pars.patchQuantiles = field_default(pars,'patchQuantiles',[4 5 6]); % % quantiles selected to be counted as patches(if using 'intensityQuantiles'); higher numbers = brighter pixels
 % pars.threshMode = field_default(pars,'threshMode','fractionOfPopulation');
@@ -27,17 +33,19 @@ pars.threshMode = field_default(pars,'threshMode','intensityQuantiles');
 %     pars.threshFraction = field_default(pars,'threshFraction',0.8); %%% thresh needed to put a pixel within a patch; value = fraction of intensity distance from min val within roi to max val within roi
 % pars.threshMode = field_default(pars,'threshMode','fractionOfMax');
 %     pars.threshFraction = field_default(pars,'threshFraction',0.878);
-    % include non-roi pixels surrounded by roi within the highest adjacent quantile
+
+% if include_interior_nonroi_in_roi==true, include non-roi pixels surrounded by roi within the highest adjacent quantile
 pars.include_interior_nonroi_in_roi = field_default(pars,'include_interior_nonroi_in_roi',1); 
 pars.show_plots = field_default(pars,'show_plots',1);
-pars.visualize_shrinking = field_default(pars,'visualize_shrinking',0);
+pars.visualize_shrinking = field_default(pars,'visualize_shrinking',0); % plot the results of changing the threshold
 pars.raisethresh_increment = field_default(pars,'raisethresh_increment',0.001); % how much to increase threshold each iteration when finding thresh; may get stuck if below 0.3 on x16 zoom
 pars.save_patchdata = field_default(pars,'save_patchdata',1); % save patchdata struct and quants image after doing analysis
 pars.quantborders_ops = field_default(pars,'quantborders_ops',struct); % ops for save_quant_borders_image
 pars.loadbw_ops = field_default(pars,'loadbw_ops',struct); % ops for loadbw.m used for load roi file
 
-
 scope = vardefault('scope','epimicro');
+
+
 
 
 %%

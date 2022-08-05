@@ -3,14 +3,14 @@
 %
 %%% first run patchcounting_analysis.m, using the top 1/5 of pixels as patches
 %
-%%% updated 2020/11/7
+%%% updated 2022/8/4
 
 
 %% set parameters
 patchcounting_filelist = 'C:\Users\Burkhalter Lab\Documents\anatomy_paper\patchcounting\patchcounting_filelist.xlsx';
 
 %%%% specify which analyses to run and save
-plot_patch_shapes = 1;
+plot_patch_shapes = 0;
     save_shapeplot_image = 0; 
         savename_shapeplot = 'axis_ratios_fig'; 
     log_axes_ratio = 0; %% makes areal differences (v1+por vs. lm+li) much more visible
@@ -18,7 +18,7 @@ plot_patch_shapes = 1;
     scalefactor1 = 0.9;
     patch_shapes_width = 450*scalefactor1; 
     patch_shapes_height = 350*scalefactor1;
-plot_patches_per_sqmm = 0; %%% patch areal density
+plot_patches_per_sqmm = 1; %%% patch areal density
     save_patches_per_sqmm = 0; 
     patches_per_sqmm_width = 300;
     patches_per_sqmm_height = 340;
@@ -70,7 +70,7 @@ findpatches_pars.visualize_shrinking = 0;
 % load('C:\Users\Burkhalter Lab\Documents\anatomy_paper\patchcounting\patchcounting_results.mat'); % unless analysis needs to be re-run, load this dataset
 filelist = readtable(patchcounting_filelist); 
 excel_rows = 2:1+height(filelist); % use all cases
-% [cases, patchtable] = patchcounting_analysis(patchcounting_filelist, excel_rows, findpatches_pars); % comment out if data already loaded
+[cases, patchtable] = patchcounting_analysis(patchcounting_filelist, excel_rows, findpatches_pars); % comment out if data already loaded
 
 %% plot patch shape data
 if show_notch
